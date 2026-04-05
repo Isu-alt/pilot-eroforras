@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teszt adatok betöltése — Pilot Erőforrás</title>
+  <link rel="stylesheet" href="./shared.css">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#f4f6f8; margin:0; font-family:system-ui,sans-serif; }
+    .card { background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.10); padding:40px 36px; width:100%; max-width:560px; }
+    h1 { margin:0 0 4px; font-size:1.4rem; color:#1a2332; }
+    .subtitle { color:#6b7280; font-size:0.9rem; margin:0 0 28px; }
+    .warning-box { background:#fff8e1; border:1px solid #f59e0b; border-radius:8px; padding:14px 16px; font-size:0.88rem; color:#92400e; margin-bottom:24px; }
+    .warning-box strong { display:block; margin-bottom:4px; }
+    #log { background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:16px; font-size:0.82rem; font-family:monospace; min-height:120px; max-height:320px; overflow-y:auto; color:#374151; margin-bottom:20px; }
+    .log-ok   { color:#16a34a; }
+    .log-skip { color:#f59e0b; }
+    .log-err  { color:#dc2626; }
+    .log-head { color:#6366f1; font-weight:600; }
+    .btn-row { display:flex; gap:12px; }
+    button { padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-size:0.95rem; font-weight:500; transition:opacity .15s; }
+    button:disabled { opacity:.5; cursor:default; }
+    #btnSeed  { background:#1d4ed8; color:#fff; }
+    #btnSeed:hover:not(:disabled)  { background:#1e40af; }
+    #btnClear { background:#dc2626; color:#fff; }
+    #btnClear:hover:not(:disabled) { background:#b91c1c; }
+    #btnGo    { background:#16a34a; color:#fff; display:none; }
+    #btnGo:hover { background:#15803d; }
+    #status   { font-size:0.88rem; color:#6b7280; margin-top:12px; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Teszt adatok betöltése</h1>
+  <p class="subtitle">Pilot Erőforrás — fejlesztői / demó seed eszköz</p>
+
+  <div class="warning-box">
+    <strong>⚠ Figyelem</strong>
+    Ez az eszköz teszt adatokat tölt be az adatbázisba. Ha már vannak éles adatok, ne futtasd — a meglévő rekordok mellé szúrja be az adatokat, nem törli azokat.<br>
+    Törölni a <strong>Törlés és seed</strong> gombbal lehet (minden adat elvész).
+  </div>
+
+  <div id="log">Várakozás a betöltésre…</div>
+
+  <div class="btn-row">
+    <button id="btnSeed"  disabled>Teszt adatok betöltése</button>
+    <button id="btnClear" disabled>Törlés és újra seed</button>
+    <button id="btnGo">Belépési oldalra →</button>
+  </div>
+  <div id="status"></div>
+</div>
+
+<script type="module">
+import { initDB, saveToIndexedDB, getDB } from './db.js';
+
+const logEl    = document.getElementById('log');
+const statusEl = document.getElementById('status');
+const btnSeed  = document.getElementById('btnSeed');
+const btnClear = document.getElementById('btnClear');
+const btnGo    = document.getElementById('btnGo');
+
+function log(msg, cls = '') {
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ─── Jelszó hash (SubtleCrypto SHA-256) ──────────────────────────────────────
+async function hashPw(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ─── Seed adatok ──────────────────────────────────────────────────────────────
+
+const FELHASZNALOK = [
+  { nev:'Adminisztrátor',   felhasznalonev:'admin',    jelszo:'admin',    szerep:'admin'     },
+  { nev:'Molnár Diszpécser',felhasznalonev:'diszp1',   jelszo:'diszp1',   szerep:'diszpecser'},
+  { nev:'Farkas Bea',       felhasznalonev:'diszp2',   jelszo:'diszp2',   szerep:'diszpecser'},
+];
+
+const SOFOROK = [
+  { teljes_nev:'Kovács János',    aliasok:'Jani,Kovi',      belepesi_datum:'2022-01-15', statusz:'aktiv',   megjegyzes:'Tapasztalt darus sofőr' },
+  { teljes_nev:'Nagy Péter',      aliasok:'Peti,Nagypeti',  belepesi_datum:'2021-03-10', statusz:'aktiv',   megjegyzes:null },
+  { teljes_nev:'Szabó Attila',    aliasok:'Tilla',          belepesi_datum:'2023-06-01', statusz:'aktiv',   megjegyzes:'Friss jogosítvány' },
+  { teljes_nev:'Tóth Gábor',      aliasok:'Gabi,Tóthék',   belepesi_datum:'2020-09-05', statusz:'aktiv',   megjegyzes:null },
+  { teljes_nev:'Horváth László',  aliasok:'Laci',           belepesi_datum:'2022-11-20', statusz:'aktiv',   megjegyzes:'Hosszú távú fuvarok specialistája' },
+  { teljes_nev:'Varga Zoltán',    aliasok:'Zoli,Varga',     belepesi_datum:'2021-07-15', statusz:'aktiv',   megjegyzes:null },
+  { teljes_nev:'Kiss Tamás',      aliasok:'Tomi',           belepesi_datum:'2023-01-10', statusz:'aktiv',   megjegyzes:null },
+  { teljes_nev:'Fekete Róbert',   aliasok:'Robi',           belepesi_datum:'2019-05-20', statusz:'inaktiv', megjegyzes:'Szülési szabadságon' },
+  { teljes_nev:'Balogh Sándor',   aliasok:'Sanyi,Balogh',  belepesi_datum:'2020-04-12', statusz:'aktiv',   megjegyzes:null },
+  { teljes_nev:'Papp Imre',       aliasok:'Imre',           belepesi_datum:'2024-02-01', statusz:'aktiv',   megjegyzes:'Próbaidős' },
+];
+
+const PROJEKTEK = [
+  { munkaszam:'MK-2026-001', helyszin:'Budapest, XIV. kerület',    megrendelo:'BKK Zrt.',                      leiras:'Kerepesi út felújítás, 2,4 km aszfaltozás' },
+  { munkaszam:'MK-2026-002', helyszin:'Győr, ipari park',          megrendelo:'Audi Hungaria Motor Kft.',      leiras:'Csarnokbővítés alapozás és szerkezetépítés' },
+  { munkaszam:'MK-2026-003', helyszin:'Miskolc, Diósgyőr',        megrendelo:'OTP Ingatlan Zrt.',              leiras:'Lakópark — 3 épület, 120 lakás, alapozás' },
+  { munkaszam:'MK-2026-004', helyszin:'Debrecen, Tócóskert',      megrendelo:'Amazon Logistics Kft.',         leiras:'Logisztikai centrum — 18 000 m² csarnok' },
+  { munkaszam:'MK-2026-005', helyszin:'Pécs, Rákóczi út 2.',      megrendelo:'Baranya Megye Önkormányzata',   leiras:'Megye Kórház C szárny felújítás' },
+];
+
+const GEPEK = [
+  { tipus:'Mobil daru',         rendszam:'ABC-123', megjegyzes:'Liebherr LTM 1050-3.1 — 50 t teherbírás' },
+  { tipus:'Tehergépkocsi',      rendszam:'DEF-456', megjegyzes:'MAN TGX 18.440 — 18 t' },
+  { tipus:'Nyergesvontató',     rendszam:'GHI-789', megjegyzes:'Volvo FH 540 — 44 t össztömeg' },
+  { tipus:'Nagydaru',           rendszam:'JKL-012', megjegyzes:'Liebherr LTM 1100-4.2 — 100 t teherbírás' },
+  { tipus:'Tehergépkocsi',      rendszam:'MNO-345', megjegyzes:'Scania R450 — billenős' },
+  { tipus:'Tehergépkocsi',      rendszam:'PQR-678', megjegyzes:'Mercedes Actros 2545 — ponyvás' },
+  { tipus:'Kotrógép',           rendszam:'STU-901', megjegyzes:'CAT 320 GC — szállítható munkagép' },
+  { tipus:'Emelődaru (teherautó-daru)', rendszam:'VWX-234', megjegyzes:'Palfinger PK 65002 Performance' },
+];
+
+// Napi terv + tény adatok: 2026-03-24 — 2026-04-10
+// sofor_id / gep_id / projekt_id 1-alapú index (a fenti tömbökbe)
+// Az id-k sorrendben lesznek 1-től, a seed sorrendje alapján
+const NAPI_ADATOK = [
+  // Dátum        S  P  G    TervKezd TervVeg   Allapot       TényKezd            TényVég             Óra   Fuv
+  ['2026-03-24',  1, 1, 1,  '07:00', '15:00', 'elfogadott', '2026-03-24 07:05', '2026-03-24 14:55',  7.8,  6 ],
+  ['2026-03-24',  2, 1, 2,  '06:00', '14:00', 'elfogadott', '2026-03-24 06:10', '2026-03-24 14:20',  8.2,  8 ],
+  ['2026-03-24',  3, 2, 3,  '07:00', '16:00', 'elfogadott', '2026-03-24 07:00', '2026-03-24 16:30',  9.5,  0 ],
+  ['2026-03-25',  1, 1, 1,  '07:00', '15:00', 'elfogadott', '2026-03-25 07:10', '2026-03-25 15:05',  7.9,  6 ],
+  ['2026-03-25',  4, 3, 4,  '08:00', '17:00', 'elfogadott', '2026-03-25 08:00', '2026-03-25 17:10',  9.2,  0 ],
+  ['2026-03-25',  5, 4, 5,  '06:30', '15:30', 'elfogadott', '2026-03-25 06:35', '2026-03-25 15:45',  9.2, 10 ],
+  ['2026-03-26',  2, 1, 2,  '06:00', '14:00', 'elfogadott', '2026-03-26 06:00', '2026-03-26 13:50',  7.8,  7 ],
+  ['2026-03-26',  6, 5, 6,  '07:00', '16:00', 'elfogadott', '2026-03-26 07:15', '2026-03-26 16:20',  9.1,  5 ],
+  ['2026-03-27',  1, 2, 1,  '07:00', '15:00', 'elfogadott', '2026-03-27 07:00', '2026-03-27 14:45',  7.8,  0 ],
+  ['2026-03-27',  7, 3, 7,  '08:00', '17:00', 'elfogadott', '2026-03-27 08:05', '2026-03-27 17:30',  9.4,  0 ],
+  ['2026-03-28',  3, 4, 5,  '06:30', '15:30', 'elfogadott', '2026-03-28 06:30', '2026-03-28 15:15',  8.8, 11 ],
+  ['2026-03-28',  9, 1, 2,  '06:00', '14:00', 'elfogadott', '2026-03-28 06:05', '2026-03-28 14:30',  8.4,  9 ],
+  ['2026-03-31',  1, 1, 1,  '07:00', '15:00', 'elfogadott', '2026-03-31 07:00', '2026-03-31 15:00',  8.0,  6 ],
+  ['2026-03-31',  2, 2, 3,  '07:00', '16:00', 'elfogadott', '2026-03-31 07:10', '2026-03-31 16:05',  8.9,  0 ],
+  ['2026-04-01',  4, 3, 4,  '08:00', '17:00', 'elfogadott', '2026-04-01 08:00', '2026-04-01 17:00',  9.0,  0 ],
+  ['2026-04-01',  5, 4, 5,  '06:30', '15:30', 'elfogadott', '2026-04-01 06:30', '2026-04-01 15:20',  8.8, 10 ],
+  ['2026-04-01',  6, 1, 6,  '06:00', '14:00', 'elfogadott', '2026-04-01 06:00', '2026-04-01 14:10',  8.2,  8 ],
+  ['2026-04-02',  1, 2, 1,  '07:00', '15:00', 'elfogadott', '2026-04-02 07:00', '2026-04-02 15:30',  8.5,  0 ],
+  ['2026-04-02',  7, 5, 8,  '07:00', '16:00', 'elfogadott', '2026-04-02 07:15', '2026-04-02 16:00',  8.75, 4 ],
+  ['2026-04-02',  9, 4, 5,  '06:30', '15:30', 'elfogadott', '2026-04-02 06:30', '2026-04-02 15:10',  8.7, 12 ],
+  ['2026-04-03',  2, 1, 2,  '06:00', '14:00', 'elfogadott', '2026-04-03 06:00', '2026-04-03 14:00',  8.0,  8 ],
+  ['2026-04-03',  3, 3, 7,  '08:00', '17:00', 'elfogadott', '2026-04-03 08:10', '2026-04-03 17:20',  9.2,  0 ],
+  ['2026-04-04',  1, 1, 1,  '07:00', '15:00', 'elfogadott', '2026-04-04 07:05', '2026-04-04 14:50',  7.75, 6],
+  ['2026-04-04',  5, 4, 5,  '06:30', '15:30', 'elfogadott', '2026-04-04 06:35', '2026-04-04 15:40',  9.1, 11 ],
+  // Ma (2026-04-05) — terv megvan, tény nincs még
+  ['2026-04-05',  1, 1, 1,  '07:00', '15:00', 'elfogadott', null, null, null, null ],
+  ['2026-04-05',  2, 2, 3,  '07:00', '16:00', 'elfogadott', null, null, null, null ],
+  ['2026-04-05',  4, 3, 4,  '08:00', '17:00', 'elfogadott', null, null, null, null ],
+  ['2026-04-05',  6, 1, 6,  '06:00', '14:00', 'javasolt',   null, null, null, null ],
+  // Jövő — csak terv
+  ['2026-04-07',  1, 1, 1,  '07:00', '15:00', 'javasolt',   null, null, null, null ],
+  ['2026-04-07',  3, 2, 3,  '07:00', '16:00', 'javasolt',   null, null, null, null ],
+  ['2026-04-07',  5, 4, 5,  '06:30', '15:30', 'javasolt',   null, null, null, null ],
+  ['2026-04-08',  2, 1, 2,  '06:00', '14:00', 'javasolt',   null, null, null, null ],
+  ['2026-04-08',  7, 3, 8,  '08:00', '17:00', 'javasolt',   null, null, null, null ],
+];
+
+// ─── Seed futtatása ───────────────────────────────────────────────────────────
+
+async function runSeed(clearFirst = false) {
+  btnSeed.disabled  = true;
+  btnClear.disabled = true;
+  logEl.innerHTML   = '';
+  statusEl.textContent = '';
+
+  const db = getDB();
+
+  if (clearFirst) {
+    log('── Táblák törlése ──────────────────────────', 'log-head');
+    for (const t of ['valtozas_log','napi_teny','napi_terv','gep','projekt','sofor','felhasznalo']) {
+      db.run(`DELETE FROM ${t}`);
+      db.run(`DELETE FROM sqlite_sequence WHERE name='${t}'`);
+      log(`  Törölve: ${t}`, 'log-skip');
+    }
+  }
+
+  // ── Felhasználók ──────────────────────────────────────────────────────────
+  log('── Felhasználók ────────────────────────────', 'log-head');
+  let userCount = 0;
+  for (const u of FELHASZNALOK) {
+    const exists = db.exec('SELECT id FROM felhasznalo WHERE felhasznalonev=?', [u.felhasznalonev]);
+    if (exists.length && exists[0].values.length) {
+      log(`  KIHAGYVA: ${u.felhasznalonev} (már létezik)`, 'log-skip');
+      continue;
+    }
+    const hash = await hashPw(u.jelszo);
+    db.run(
+      `INSERT INTO felhasznalo (nev, felhasznalonev, jelszo_hash, szerep, aktiv) VALUES (?,?,?,?,1)`,
+      [u.nev, u.felhasznalonev, hash, u.szerep]
+    );
+    log(`  + ${u.felhasznalonev} (${u.szerep}) — jelszó: ${u.jelszo}`, 'log-ok');
+    userCount++;
+  }
+
+  // ── Sofőrök ───────────────────────────────────────────────────────────────
+  log('── Sofőrök ─────────────────────────────────', 'log-head');
+  const soforIds = [];
+  for (const s of SOFOROK) {
+    const exists = db.exec('SELECT id FROM sofor WHERE teljes_nev=?', [s.teljes_nev]);
+    if (exists.length && exists[0].values.length) {
+      soforIds.push(exists[0].values[0][0]);
+      log(`  KIHAGYVA: ${s.teljes_nev}`, 'log-skip');
+      continue;
+    }
+    db.run(
+      `INSERT INTO sofor (teljes_nev, aliasok, belepesi_datum, statusz, megjegyzes) VALUES (?,?,?,?,?)`,
+      [s.teljes_nev, s.aliasok, s.belepesi_datum, s.statusz, s.megjegyzes]
+    );
+    const id = db.exec('SELECT last_insert_rowid()')[0].values[0][0];
+    soforIds.push(id);
+    log(`  + ${s.teljes_nev} (id=${id}, ${s.statusz})`, 'log-ok');
+  }
+
+  // ── Projektek ─────────────────────────────────────────────────────────────
+  log('── Projektek ───────────────────────────────', 'log-head');
+  const projektIds = [];
+  for (const p of PROJEKTEK) {
+    const exists = db.exec('SELECT id FROM projekt WHERE munkaszam=?', [p.munkaszam]);
+    if (exists.length && exists[0].values.length) {
+      projektIds.push(exists[0].values[0][0]);
+      log(`  KIHAGYVA: ${p.munkaszam}`, 'log-skip');
+      continue;
+    }
+    db.run(
+      `INSERT INTO projekt (munkaszam, helyszin, megrendelo, leiras) VALUES (?,?,?,?)`,
+      [p.munkaszam, p.helyszin, p.megrendelo, p.leiras]
+    );
+    const id = db.exec('SELECT last_insert_rowid()')[0].values[0][0];
+    projektIds.push(id);
+    log(`  + ${p.munkaszam} — ${p.helyszin} (id=${id})`, 'log-ok');
+  }
+
+  // ── Gépek ─────────────────────────────────────────────────────────────────
+  log('── Gépek ───────────────────────────────────', 'log-head');
+  const gepIds = [];
+  for (const g of GEPEK) {
+    const exists = db.exec('SELECT id FROM gep WHERE rendszam=?', [g.rendszam]);
+    if (exists.length && exists[0].values.length) {
+      gepIds.push(exists[0].values[0][0]);
+      log(`  KIHAGYVA: ${g.rendszam}`, 'log-skip');
+      continue;
+    }
+    db.run(
+      `INSERT INTO gep (tipus, rendszam, megjegyzes) VALUES (?,?,?)`,
+      [g.tipus, g.rendszam, g.megjegyzes]
+    );
+    const id = db.exec('SELECT last_insert_rowid()')[0].values[0][0];
+    gepIds.push(id);
+    log(`  + ${g.rendszam} — ${g.tipus} (id=${id})`, 'log-ok');
+  }
+
+  // ── Napi terv + tény ─────────────────────────────────────────────────────
+  log('── Napi terv / tény ────────────────────────', 'log-head');
+  let tervCount = 0, tenyCount = 0;
+  for (const row of NAPI_ADATOK) {
+    const [datum, sIdx, pIdx, gIdx, kezdes, vegez, allapot, tKezd, tVeg, ora, fuv] = row;
+    const sid = soforIds[sIdx-1];
+    const pid = projektIds[pIdx-1];
+    const gid = gepIds[gIdx-1];
+
+    if (!sid || !pid || !gid) {
+      log(`  HIBA: hiányzó FK — datum=${datum} s=${sIdx} p=${pIdx} g=${gIdx}`, 'log-err');
+      continue;
+    }
+
+    // Terv
+    const tervExists = db.exec(
+      'SELECT id FROM napi_terv WHERE datum=? AND sofor_id=? AND projekt_id=?',
+      [datum, sid, pid]
+    );
+    if (!tervExists.length || !tervExists[0].values.length) {
+      db.run(
+        `INSERT INTO napi_terv (datum,sofor_id,projekt_id,gep_id,kezdes,vegez,allapot,forras)
+         VALUES (?,?,?,?,?,?,?,'manualis')`,
+        [datum, sid, pid, gid, kezdes, vegez, allapot]
+      );
+      tervCount++;
+    }
+
+    // Tény (csak ha van tényleges adat)
+    if (tKezd && tVeg) {
+      const tenyExists = db.exec(
+        'SELECT id FROM napi_teny WHERE datum=? AND sofor_id=? AND projekt_id=?',
+        [datum, sid, pid]
+      );
+      if (!tenyExists.length || !tenyExists[0].values.length) {
+        db.run(
+          `INSERT INTO napi_teny (datum,sofor_id,projekt_id,gep_id,kezd_idopont,befejezes_idopont,munkaora,fuvarok_szama,allapot,forras)
+           VALUES (?,?,?,?,?,?,?,?,'rogzitett','manualis')`,
+          [datum, sid, pid, gid, tKezd, tVeg, ora, fuv]
+        );
+        tenyCount++;
+      }
+    }
+  }
+  log(`  + ${tervCount} napi terv bejegyzés`, 'log-ok');
+  log(`  + ${tenyCount} napi tény bejegyzés`, 'log-ok');
+
+  // ── Mentés ────────────────────────────────────────────────────────────────
+  log('── Mentés IndexedDB-be… ────────────────────', 'log-head');
+  await saveToIndexedDB();
+  log('  ✓ Adatbázis elmentve.', 'log-ok');
+
+  // ── Összesítő ─────────────────────────────────────────────────────────────
+  log('', '');
+  log('══ Kész! ════════════════════════════════════', 'log-head');
+
+  const counts = {};
+  for (const t of ['felhasznalo','sofor','projekt','gep','napi_terv','napi_teny']) {
+    counts[t] = db.exec(`SELECT COUNT(*) FROM ${t}`)[0].values[0][0];
+  }
+  log(`  Felhasználók: ${counts.felhasznalo}  |  Sofőrök: ${counts.sofor}  |  Projektek: ${counts.projekt}`, 'log-ok');
+  log(`  Gépek: ${counts.gep}  |  Napi tervek: ${counts.napi_terv}  |  Napi tények: ${counts.napi_teny}`, 'log-ok');
+  log('', '');
+  log('  Bejelentkezési adatok:', 'log-head');
+  log('    admin   / admin    (adminisztrátor)', 'log-ok');
+  log('    diszp1  / diszp1   (diszpécser)', 'log-ok');
+  log('    diszp2  / diszp2   (diszpécser)', 'log-ok');
+
+  statusEl.textContent = 'Seed kész! A belépési oldalra léphetsz.';
+  btnGo.style.display = 'inline-block';
+  btnSeed.disabled  = false;
+  btnClear.disabled = false;
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+try {
+  logEl.textContent = 'Adatbázis betöltése…';
+  await initDB();
+  logEl.textContent = 'Adatbázis kész. Kattints a gombra a seed futtatásához.';
+  btnSeed.disabled  = false;
+  btnClear.disabled = false;
+} catch (e) {
+  logEl.textContent = 'Hiba az adatbázis betöltésekor: ' + e.message;
+}
+
+btnSeed.addEventListener('click',  () => runSeed(false));
+btnClear.addEventListener('click', () => {
+  if (confirm('Biztosan törölsz MINDEN adatot és újra seed-elsz?')) runSeed(true);
+});
+btnGo.addEventListener('click', () => window.location.href = './login.html');
+</script>
+</body>
+</html>
