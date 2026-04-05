@@ -1,22 +1,38 @@
 /**
  * identity.js — Felhasználói azonosító kezelése
  *
- * A localStorage-ban tárolt felhasználói nevet és szerepkört kezeli.
+ * Elsőként az auth.js munkamenetéből olvas (ha van aktív bejelentkezés).
+ * Visszaesési (fallback) értékként a localStorage-ban tárolt adatokat használja.
  * A crud.js logChange() hívásai ebből olvassák a felhasználó nevét.
  *
  * localStorage kulcs: "dispatcher_identity"
  * Séma: { "name": "Kiss János", "role": "Diszpécser" }
  */
 
+import { getSession } from './auth.js';
+
 /**
  * getIdentity — Visszaadja az aktuálisan beállított felhasználói azonosítót.
  *
- * Ha nincs elmentve vagy hibás a JSON, alapértéket ad vissza.
+ * Prioritás: 1. Auth munkamenet (sessionStorage)  2. localStorage fallback
+ * Ha egyik sem érhető el, alapértéket ad vissza.
  *
  * @returns {{ name: string, role: string }}
  */
 export function getIdentity() {
   const fallback = { name: 'Ismeretlen', role: 'Diszpécser' };
+
+  // 1. Auth munkamenet ellenőrzése
+  try {
+    const session = getSession();
+    if (session && session.nev && session.szerep) {
+      return { name: session.nev, role: session.szerep };
+    }
+  } catch {
+    // Folytatás a localStorage fallback-kel
+  }
+
+  // 2. localStorage fallback (visszafelé kompatibilitás)
   try {
     const raw = localStorage.getItem('dispatcher_identity');
     if (!raw) return fallback;

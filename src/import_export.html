@@ -409,6 +409,13 @@
         </svg>
         Beállítások
       </a>
+      <!-- Admin panel (csak adminoknak látható) -->
+      <div id="navAdminItem" style="display:none">
+        <a class="nav-item" href="./admin.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Admin panel
+        </a>
+      </div>
     </nav>
 
     <div class="sidebar-footer">
@@ -419,6 +426,10 @@
         </svg>
         <span id="sidebarUserName">—</span>
       </div>
+      <button class="nav-item nav-item--danger" id="btnLogout">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Kijelentkezés
+      </button>
     </div>
   </aside>
 
@@ -436,9 +447,9 @@
     <div class="content-area">
 
       <!-- ════════════════════════════════════════════════════════════
-           A) IMPORT SZEKCIÓ
+           A) IMPORT SZEKCIÓ (csak adminoknak)
       ════════════════════════════════════════════════════════════ -->
-      <div class="page-section">
+      <div class="page-section" id="sectionMasterImport" style="display:none">
         <p class="page-section-title">Excel import</p>
 
         <!-- 1. Fájlfeltöltő zone -->
@@ -567,9 +578,9 @@
       </div><!-- /.page-section export -->
 
       <!-- ════════════════════════════════════════════════════════════
-           C) ADATBÁZIS VISSZAÁLLÍTÁS SZEKCIÓ
+           C) ADATBÁZIS VISSZAÁLLÍTÁS SZEKCIÓ (csak adminoknak)
       ════════════════════════════════════════════════════════════ -->
-      <div class="page-section">
+      <div class="page-section" id="sectionDbOps" style="display:none">
         <p class="page-section-title">Adatbázis visszaállítása</p>
 
         <div class="restore-section">
@@ -591,6 +602,9 @@
   import { initDB, getDB, saveToIndexedDB, exportDB, importDB } from './db.js';
   import { getAllSoforok, getAllProjektek, getAllGepek } from './crud.js';
   import { getIdentity } from './identity.js';
+  import { requireAuth, logout, isAdmin } from './auth.js';
+
+  const session = requireAuth();
   import {
     readExcelFile,
     getSheetsInfo,
@@ -623,7 +637,15 @@
   // ─── Inicializálás ──────────────────────────────────────────────────────────
 
   // Sidebar felhasználónév feltöltése
-  document.getElementById('sidebarUserName').textContent = getIdentity().name;
+  document.getElementById('sidebarUserName').textContent = session.nev;
+  if (isAdmin()) document.getElementById('navAdminItem').style.display = '';
+  document.getElementById('btnLogout').addEventListener('click', () => logout());
+
+  // Admin szekciók megjelenítése
+  if (isAdmin()) {
+    document.getElementById('sectionMasterImport').style.display = '';
+    document.getElementById('sectionDbOps').style.display = '';
+  }
 
   try {
     await initDB();

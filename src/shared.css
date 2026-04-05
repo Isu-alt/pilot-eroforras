@@ -788,3 +788,21 @@ body {
 .restore-section { background: #FFFFFF; border: 1px solid #E8E6E1; border-radius: 8px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .restore-section h3 { font-size: 14px; font-weight: 600; color: #1A1C1E; margin: 0; min-width: 200px; }
 .restore-section p { font-size: 13px; color: #7A6F5E; margin: 0; flex: 1; }
+
+/* ─── Kijelentkezés gomb (sidebar footer) ───────────────────────────────────── */
+
+.nav-item--danger {
+  color: #C0392B !important;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  padding: 10px 12px;
+}
+
+.nav-item--danger:hover {
+  background: rgba(192, 57, 43, 0.08) !important;
+  color: #C0392B !important;
+}

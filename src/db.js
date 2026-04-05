@@ -161,6 +161,20 @@ export function createSchema() {
       );
     `);
 
+    db.run(`
+      -- Felhasználók és szerepkörök (autentikáció)
+      CREATE TABLE IF NOT EXISTS felhasznalo (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        nev            TEXT    NOT NULL,
+        felhasznalonev TEXT    NOT NULL UNIQUE,
+        jelszo_hash    TEXT    NOT NULL,
+        szerep         TEXT    NOT NULL DEFAULT 'diszpecser',
+        aktiv          INTEGER NOT NULL DEFAULT 1,
+        created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at     TIMESTAMP
+      );
+    `);
+
     console.log('[db] Séma sikeresen létrehozva / ellenőrizve.');
   } catch (err) {
     console.error('[db] createSchema hiba:', err);
@@ -297,6 +311,49 @@ export async function importDB(file) {
 export function getDB() {
   if (!db) throw new Error('[db] getDB: adatbázis nincs inicializálva. Hívd meg előbb az initDB()-t.');
   return db;
+}
+
+/**
+ * seedDefaultAdmin — Alapértelmezett admin felhasználó létrehozása, ha a tábla üres.
+ *
+ * Jelszó hash-elés SubtleCrypto SHA-256-tal (nincs só — helyi app).
+ * Az auth.js-t NEM importálja (körkörös függőség elkerülése).
+ *
+ * @returns {Promise<boolean>} true ha seedelés történt, false ha már voltak felhasználók
+ */
+export async function seedDefaultAdmin() {
+  if (!db) throw new Error('[db] seedDefaultAdmin: adatbázis nincs inicializálva.');
+
+  try {
+    // Ellenőrzés: van-e már felhasználó?
+    const result = db.exec('SELECT COUNT(*) as cnt FROM felhasznalo');
+    const count = result[0]?.values[0]?.[0] ?? 0;
+
+    if (count > 0) {
+      return false; // Már van legalább egy felhasználó
+    }
+
+    // SHA-256 hash SubtleCrypto-val (inline, az auth.js importálása nélkül)
+    const encoder = new TextEncoder();
+    const data = encoder.encode('admin');
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    db.run(
+      `INSERT INTO felhasznalo (nev, felhasznalonev, jelszo_hash, szerep, aktiv)
+       VALUES (?, ?, ?, 'admin', 1)`,
+      ['Adminisztrátor', 'admin', hashHex]
+    );
+
+    await saveToIndexedDB();
+
+    console.log('[db] Alapértelmezett admin felhasználó létrehozva.');
+    return true;
+  } catch (err) {
+    console.error('[db] seedDefaultAdmin hiba:', err);
+    throw err;
+  }
 }
 
 // ─── Belső segédfüggvények ───────────────────────────────────────────────────
