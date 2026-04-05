@@ -1,0 +1,105 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Equipment {
+  id           String               @id @default(uuid())
+  name         String
+  type         String
+  manufacturer String?
+  model        String?
+  serialNumber String?
+  createdAt    DateTime             @default(now())
+
+  // kapcsolatok
+  dimensions   EquipmentDimensions? 
+  insurances   EquipmentInsurance[]
+  permits      EquipmentPermit[]
+  maintenancePlans MaintenancePlan[]   // hozzáadva: visszairányító reláció
+}
+
+model EquipmentDimensions {
+  id          String    @id @default(uuid())
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+  equipmentId String    @unique            // egy-az-egy kapcsolat követelménye: unique
+  length_m    Float?
+  width_m     Float?
+  height_m    Float?
+  tare_kg     Int?
+  gross_kg    Int?
+}
+
+model Person {
+  id        String     @id @default(uuid())
+  name      String
+  role      String?
+  vacations Vacation[]
+}
+
+model Vacation {
+  id        String  @id @default(uuid())
+  person    Person  @relation(fields: [personId], references: [id])
+  personId  String
+  type      String
+  startDate DateTime
+  endDate   DateTime
+  status    String
+}
+
+model MaintenancePlan {
+  id                    String    @id @default(uuid())
+  equipment             Equipment @relation(fields: [equipmentId], references: [id])
+  equipmentId           String
+  planType              String
+  recommendedDate       DateTime?
+  estimatedEffortHours  Float?
+  status                String
+}
+
+model ActualRecord {
+  id           String          @id @default(uuid())
+  planId       String?
+  equipmentId  String?
+  personId     String?
+  actualStart  DateTime?
+  actualEnd    DateTime?
+  actualHours  Float?
+  createdAt    DateTime        @default(now())
+
+  financial    ActualFinancial?  // visszairányító reláció
+}
+
+model ActualFinancial {
+  id              String       @id @default(uuid())
+  actualRecord    ActualRecord @relation(fields: [actualRecordId], references: [id])
+  actualRecordId  String       @unique   // egy-az-egy relációhoz unique szükséges
+  laborCost       Float?
+  partsCost       Float?
+  externalCost    Float?
+  totalCost       Float?
+}
+
+model EquipmentInsurance {
+  id             String    @id @default(uuid())
+  equipment      Equipment @relation(fields: [equipmentId], references: [id])
+  equipmentId    String
+  insurer        String
+  policyNumber   String?
+  validFrom      DateTime?
+  validUntil     DateTime?
+  coverageAmount Float?
+}
+
+model EquipmentPermit {
+  id          String    @id @default(uuid())
+  equipment   Equipment @relation(fields: [equipmentId], references: [id])
+  equipmentId String
+  permitType  String
+  issueDate   DateTime?
+  expiryDate  DateTime?
+}

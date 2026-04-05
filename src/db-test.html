@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DB Teszt — pilot-eroforras</title>
+
+  <!--
+    sql.js: böngésző-oldali SQLite WASM könyvtár.
+    A globális initSqlJs függvényt teszi elérhetővé,
+    amelyet a db.js module-ból hívunk meg.
+  -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 860px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      background: #f5f5f5;
+      color: #1a1a1a;
+    }
+
+    h1 { margin-bottom: 0.25rem; }
+    h2 { margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1rem; color: #555; }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+
+    button {
+      padding: 0.45rem 1rem;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    button:hover { background: #e8e8e8; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #status {
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+    }
+
+    .status-ok    { background: #d4edda; color: #155724; }
+    .status-err   { background: #f8d7da; color: #721c24; }
+    .status-info  { background: #d1ecf1; color: #0c5460; }
+
+    pre {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      min-height: 3rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Rejtett fájlbevitel az importhoz */
+    #importInput { display: none; }
+  </style>
+</head>
+<body>
+
+  <h1>pilot-eroforras — DB Teszt</h1>
+  <p>Ez az oldal az <code>src/db.js</code> modul alapfunkcióit ellenőrzi.</p>
+
+  <div id="status" class="status-info">Inicializálás folyamatban…</div>
+
+  <!-- Vezérlőgombok -->
+  <div class="btn-row">
+    <button id="btnInsert"   disabled>Teszt adatok beírása</button>
+    <button id="btnQuery"    disabled>Lekérdezés és megjelenítés</button>
+    <button id="btnSave"     disabled>Mentés IndexedDB-be</button>
+    <button id="btnExport"   disabled>Export .sqlite</button>
+    <button id="btnImport"   disabled>Import .sqlite fájl</button>
+    <button id="btnReload"   disabled>Töröl és újratölt IndexedDB-ből</button>
+  </div>
+
+  <!-- Rejtett fájlbeviteli mező az importhoz -->
+  <input type="file" id="importInput" accept=".sqlite,.db" />
+
+  <!-- Eredmény megjelenítés -->
+  <h2>Lekérdezés eredménye</h2>
+  <pre id="output">— még nincs lekérdezés —</pre>
+
+  <script type="module">
+    // ─── Importok ──────────────────────────────────────────────────────────────
+    import {
+      initDB,
+      saveToIndexedDB,
+      exportDB,
+      importDB,
+      getDB,
+    } from './db.js';
+
+    // ─── DOM elemek ────────────────────────────────────────────────────────────
+    const status      = document.getElementById('status');
+    const output      = document.getElementById('output');
+    const btnInsert   = document.getElementById('btnInsert');
+    const btnQuery    = document.getElementById('btnQuery');
+    const btnSave     = document.getElementById('btnSave');
+    const btnExport   = document.getElementById('btnExport');
+    const btnImport   = document.getElementById('btnImport');
+    const btnReload   = document.getElementById('btnReload');
+    const importInput = document.getElementById('importInput');
+
+    // ─── Segédfüggvények ───────────────────────────────────────────────────────
+
+    /**
+     * setStatus — Állapotüzenet kiírása színkód-váltással.
+     * @param {string} msg
+     * @param {'ok'|'err'|'info'} type
+     */
+    function setStatus(msg, type = 'info') {
+      status.textContent = msg;
+      status.className = `status-${type}`;
+    }
+
+    /**
+     * showOutput — Az eredményt <pre>-be írja JSON formátumban.
+     * @param {any} data
+     */
+    function showOutput(data) {
+      output.textContent = JSON.stringify(data, null, 2);
+    }
+
+    /**
+     * enableButtons — Feloldja a gombokat az inicializálás után.
+     */
+    function enableButtons() {
+      [btnInsert, btnQuery, btnSave, btnExport, btnImport, btnReload]
+        .forEach(btn => btn.disabled = false);
+    }
+
+    /**
+     * sqlResultToObjects — sql.js exec() eredményét [{col: val, …}] tömbbé alakítja.
+     * @param {Array} results sql.js exec() visszatérési értéke
+     * @returns {Array<Object>}
+     */
+    function sqlResultToObjects(results) {
+      if (!results || results.length === 0) return [];
+      const { columns, values } = results[0];
+      return values.map(row =>
+        Object.fromEntries(columns.map((col, i) => [col, row[i]]))
+      );
+    }
+
+    // ─── Inicializálás ─────────────────────────────────────────────────────────
+
+    try {
+      setStatus('sql.js betöltése és adatbázis inicializálása…', 'info');
+      await initDB();
+      setStatus('Adatbázis sikeresen inicializálva. Kész.', 'ok');
+      enableButtons();
+    } catch (err) {
+      setStatus(`Inicializálási hiba: ${err.message}`, 'err');
+      console.error(err);
+    }
+
+    // ─── Teszt adatok beírása ──────────────────────────────────────────────────
+
+    btnInsert.addEventListener('click', () => {
+      try {
+        const db = getDB();
+
+        // 1 teszt sofőr
+        db.run(`
+          INSERT OR IGNORE INTO sofor (teljes_nev, aliasok, belepesi_datum, statusz, megjegyzes)
+          VALUES ('Kovács János', 'Jani, KJ', '2022-03-15', 'aktiv', 'Teszt sofőr bejegyzés')
+        `);
+
+        // 1 teszt projekt
+        db.run(`
+          INSERT OR IGNORE INTO projekt (munkaszam, helyszin, megrendelo, leiras)
+          VALUES ('2024-001', 'Budapest, Keleti pu.', 'MÁV Zrt.', 'Teszt szállítási projekt')
+        `);
+
+        // 1 teszt gép
+        db.run(`
+          INSERT OR IGNORE INTO gep (tipus, rendszam, megjegyzes)
+          VALUES ('tehergépkocsi', 'ABC-123', '18t-os, klímás')
+        `);
+
+        setStatus('Teszt adatok sikeresen beírva (vagy már léteznek).', 'ok');
+        showOutput({ uzenet: 'INSERT OR IGNORE lefutott — lekérdezéssel ellenőrizd az eredményt.' });
+      } catch (err) {
+        setStatus(`Beírási hiba: ${err.message}`, 'err');
+        console.error(err);
+      }
+    });
+
+    // ─── Lekérdezés és megjelenítés ───────────────────────────────────────────
+
+    btnQuery.addEventListener('click', () => {
+      try {
+        const db = getDB();
+
+        const soforok  = sqlResultToObjects(db.exec('SELECT * FROM sofor'));
+        const projektek = sqlResultToObjects(db.exec('SELECT * FROM projekt'));
+        const gepek    = sqlResultToObjects(db.exec('SELECT * FROM gep'));
+
+        showOutput({ soforok, projektek, gepek });
+        setStatus(`Lekérdezés kész — ${soforok.length} sofőr, ${projektek.length} projekt, ${gepek.length} gép.`, 'ok');
+      } catch (err) {
+        setStatus(`Lekérdezési hiba: ${err.message}`, 'err');
+        console.error(err);
+      }
+    });
+
+    // ─── Mentés IndexedDB-be ───────────────────────────────────────────────────
+
+    btnSave.addEventListener('click', async () => {
+      try {
+        setStatus('Mentés IndexedDB-be…', 'info');
+        await saveToIndexedDB();
+        setStatus('Adatbázis sikeresen mentve IndexedDB-be.', 'ok');
+      } catch (err) {
+        setStatus(`Mentési hiba: ${err.message}`, 'err');
+        console.error(err);
+      }
+    });
+
+    // ─── Export .sqlite ────────────────────────────────────────────────────────
+
+    btnExport.addEventListener('click', () => {
+      try {
+        exportDB();
+        setStatus('Letöltés elindítva (.sqlite).', 'ok');
+      } catch (err) {
+        setStatus(`Export hiba: ${err.message}`, 'err');
+        console.error(err);
+      }
+    });
+
+    // ─── Import .sqlite fájl ───────────────────────────────────────────────────
+
+    btnImport.addEventListener('click', () => {
+      // A rejtett fájlbeviteli mezőn keresztül indítjuk a fájlválasztót
+      importInput.value = '';
+      importInput.click();
+    });
+
+    importInput.addEventListener('change', async () => {
+      const file = importInput.files[0];
+      if (!file) return;
+
+      try {
+        setStatus(`Importálás: ${file.name}…`, 'info');
+        await importDB(file);
+        setStatus(`Sikeresen importálva: ${file.name}`, 'ok');
+        // Automatikusan frissítjük a megjelenített adatokat
+        btnQuery.click();
+      } catch (err) {
+        setStatus(`Import hiba: ${err.message}`, 'err');
+        console.error(err);
+      }
+    });
+
+    // ─── Töröl és újratölt IndexedDB-ből ──────────────────────────────────────
+
+    btnReload.addEventListener('click', async () => {
+      try {
+        setStatus('Adatbázis újratöltése IndexedDB-ből…', 'info');
+        await initDB();
+        setStatus('Adatbázis sikeresen újratöltve IndexedDB-ből.', 'ok');
+        showOutput({ uzenet: 'Újratöltés kész — lekérdezéssel ellenőrizd az adatokat.' });
+      } catch (err) {
+        setStatus(`Újratöltési hiba: ${err.message}`, 'err');
+        console.error(err);
+      }
+    });
+  </script>
+
+</body>
+</html>

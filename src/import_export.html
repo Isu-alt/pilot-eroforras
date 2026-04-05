@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Import / Export | Pilot Erőforrás</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared.css" />
+
+  <!-- SheetJS CDN — window.XLSX globálisként lesz elérhető -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    /* ─── Drop zone ──────────────────────────────────────────────────────────── */
+    .drop-zone {
+      border: 2px dashed #C8C4BC;
+      border-radius: 8px;
+      padding: 40px 24px;
+      text-align: center;
+      background: #FAFAF8;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .drop-zone.drag-over {
+      border-color: #2D6A4F;
+      background: #E9F5EE;
+    }
+    .drop-hint {
+      font-size: 11px;
+      color: #A09688;
+      margin-top: 8px;
+    }
+    .drop-zone label {
+      color: var(--color-accent);
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+    .drop-zone p {
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: var(--color-text-secondary);
+    }
+    .drop-zone svg {
+      display: block;
+      margin: 0 auto 12px;
+    }
+
+    /* ─── Import / review szekciók ───────────────────────────────────────────── */
+    .import-section {
+      background: #FFFFFF;
+      border: 1px solid #E8E6E1;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+    .import-section h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1A1C1E;
+      margin: 0 0 16px;
+    }
+
+    /* ─── Review táblázat sorok ─────────────────────────────────────────────── */
+    .review-row--exact       { background: #F6FBF8; }
+    .review-row--alias       { background: #F6FBF8; }
+    .review-row--fuzzy       { background: #FFFBF0; }
+    .review-row--levenshtein { background: #FFF8F0; }
+    .review-row--partial     { background: #FFFDF3; }
+    .review-row--unknown     { background: #FFF5F5; }
+
+    /* ─── Export kártyák ─────────────────────────────────────────────────────── */
+    .export-cards {
+      display: flex;
+      gap: 16px;
+    }
+    .export-card {
+      flex: 1;
+      background: #FFFFFF;
+      border: 1px solid #E8E6E1;
+      border-radius: 8px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .export-card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1A1C1E;
+      margin: 0;
+    }
+    .export-card p {
+      font-size: 13px;
+      color: #7A6F5E;
+      margin: 0;
+    }
+    .export-options {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .export-options input[type="date"] {
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--color-text-primary);
+      background: var(--color-surface);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .export-options input[type="date"]:focus {
+      border-color: var(--color-accent);
+    }
+
+    /* ─── Export szűrősáv ────────────────────────────────────────────────────── */
+    .export-filters {
+      display: flex;
+      align-items: flex-end;
+      gap: 20px;
+      padding: 16px 20px;
+      background: #FAFAF8;
+      border: 1px solid #E8E6E1;
+      border-radius: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    /* ─── Restore szekció ────────────────────────────────────────────────────── */
+    .restore-section {
+      background: #FFFFFF;
+      border: 1px solid #E8E6E1;
+      border-radius: 8px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .restore-section h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1A1C1E;
+      margin: 0;
+      min-width: 200px;
+    }
+    .restore-section p {
+      font-size: 13px;
+      color: #7A6F5E;
+      margin: 0;
+      flex: 1;
+    }
+
+    /* ─── Oldalspecifikus: content-area vertikálisan scrollozható ─────────────── */
+    .content-area {
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .page-section {
+      width: 100%;
+    }
+    .page-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin: 0 0 12px;
+    }
+
+    /* ─── Sheet selector táblázat ────────────────────────────────────────────── */
+    .sheet-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .sheet-table th {
+      text-align: left;
+      padding: 9px 12px;
+      background: var(--color-surface-alt);
+      border-bottom: 1px solid var(--color-border);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+    }
+    .sheet-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--color-border-row);
+      vertical-align: middle;
+    }
+    .sheet-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ─── Review táblázat ────────────────────────────────────────────────────── */
+    .review-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .review-table th {
+      text-align: left;
+      padding: 9px 12px;
+      background: var(--color-surface-alt);
+      border-bottom: 1px solid var(--color-border);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      white-space: nowrap;
+    }
+    .review-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--color-border-row);
+      vertical-align: middle;
+    }
+    .review-table tr:last-child td {
+      border-bottom: none;
+    }
+    .review-table select {
+      height: 30px;
+      padding: 0 8px;
+      border: 1px solid var(--color-border);
+      border-radius: 5px;
+      font-size: 12px;
+      font-family: inherit;
+      color: var(--color-text-primary);
+      background: #fff;
+      outline: none;
+      max-width: 180px;
+    }
+
+    /* ─── Egyezés badge-ek ───────────────────────────────────────────────────── */
+    .match-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .match-badge--exact       { background: #E9F5EE; color: #2D6A4F; }
+    .match-badge--alias       { background: #E9F5EE; color: #2D6A4F; }
+    .match-badge--fuzzy       { background: #FEF3DC; color: #8A5E00; }
+    .match-badge--levenshtein { background: #FDEBD0; color: #7A4500; }
+    .match-badge--partial     { background: #FEF3DC; color: #B07B10; }
+    .match-badge--unknown     { background: #FFF0EE; color: #C0392B; }
+
+    /* ─── Eredmény banner ────────────────────────────────────────────────────── */
+    .result-banner {
+      padding: 14px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .result-banner--success {
+      background: #E9F5EE;
+      color: #2D6A4F;
+      border: 1px solid #B8DCC9;
+    }
+    .result-banner--error {
+      background: #fdecea;
+      color: var(--color-error);
+      border: 1px solid var(--color-error-muted);
+    }
+    .result-banner span {
+      font-weight: 700;
+    }
+
+    /* ─── Restore státusz szövegek ───────────────────────────────────────────── */
+    .status-ok  { color: #2D6A4F; font-size: 13px; font-weight: 500; }
+    .status-err { color: var(--color-error); font-size: 13px; font-weight: 500; }
+
+    /* ─── Spinner (egyszerű CSS alapú) ──────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--color-accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Stat kártyák (import összefoglaló) ─────────────────────────────────── */
+    .stat-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-secondary);
+    }
+    .stat-pill strong { color: var(--color-text-primary); }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div>
+        <div class="brand-label">Pilot</div>
+        <div class="brand-name">Erőforrás</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- Dashboard -->
+      <a class="nav-item" href="./index.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        Dashboard
+      </a>
+      <!-- Sofőrök -->
+      <a class="nav-item" href="./soforok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Sofőrök
+      </a>
+      <!-- Projektek -->
+      <a class="nav-item" href="./projektek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Projektek
+      </a>
+      <!-- Gépek -->
+      <a class="nav-item" href="./gepek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="6" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M11 8h2.5l1 2.5V12h-3.5V8z" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="4" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+          <circle cx="11.5" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        Gépek
+      </a>
+      <div class="nav-divider"></div>
+      <!-- Napi rögzítés -->
+      <a class="nav-item" href="./napi_rogzites.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5.5 10.5l1.5 1.5 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Napi rögzítés
+      </a>
+      <!-- Napi tervezés -->
+      <a class="nav-item" href="./napi_tervezes.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 10h6M5 12.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Napi tervezés
+      </a>
+      <!-- Import / Export — aktív -->
+      <a class="nav-item active" href="./import_export.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 11v2h10v-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Import / Export
+      </a>
+      <!-- Beállítások -->
+      <a class="nav-item" href="./settings.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        Beállítások
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user-info" id="sidebarUserInfo">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <span id="sidebarUserName">—</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Fő tartalom ──────────────────────────────────────────────────────── -->
+  <div class="main-content">
+
+    <header class="page-header">
+      <div class="page-header-left">
+        <h1 class="page-title">Import / Export</h1>
+        <div class="page-subtitle">Excel import, adatexport és adatbázis-kezelés</div>
+      </div>
+    </header>
+
+    <!-- Fő tartalom: szekciók egymás alatt -->
+    <div class="content-area">
+
+      <!-- ════════════════════════════════════════════════════════════
+           A) IMPORT SZEKCIÓ
+      ════════════════════════════════════════════════════════════ -->
+      <div class="page-section">
+        <p class="page-section-title">Excel import</p>
+
+        <!-- 1. Fájlfeltöltő zone -->
+        <div class="import-section">
+          <h2>Excel fájl feltöltése</h2>
+          <div id="dropZone" class="drop-zone">
+            <!-- Upload ikon -->
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="40" height="40" rx="10" fill="#E9F5EE"/>
+              <path d="M20 26V14M15 19l5-5 5 5" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M13 28h14" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <p>Húzd ide az Excel fájlt, vagy <label for="fileInput">tallózz</label></p>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
+            <p class="drop-hint">Támogatott formátumok: .xlsx, .xls</p>
+          </div>
+        </div>
+
+        <!-- 2. Sheet selector panel (kezdetben rejtett) -->
+        <div id="sheetSelector" class="import-section" style="display:none;">
+          <h2>Sheet kiválasztása importhoz</h2>
+          <div style="overflow-x:auto;">
+            <table class="sheet-table">
+              <thead>
+                <tr>
+                  <th style="width:40px;">Import</th>
+                  <th>Sheet neve</th>
+                  <th>Érzékelt dátum</th>
+                  <th style="width:90px; text-align:right;">Sorok</th>
+                </tr>
+              </thead>
+              <tbody id="sheetTableBody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:16px; display:flex; gap:10px; align-items:center;">
+            <button class="btn-primary" id="btnLoadPreview">Előnézet betöltése</button>
+            <button class="btn-secondary" id="btnCancelImport">Mégse</button>
+          </div>
+        </div>
+
+        <!-- 3. Review panel (kezdetben rejtett) -->
+        <div id="reviewPanel" class="import-section" style="display:none;">
+          <h2>Import előnézet és sofőr egyeztetés</h2>
+
+          <!-- Statisztika pillák -->
+          <div class="stat-pills" id="statPills"></div>
+
+          <div style="overflow-x:auto; max-height:480px; overflow-y:auto;">
+            <table class="review-table">
+              <thead>
+                <tr>
+                  <th>Dátum</th>
+                  <th>Sofőrnév (eredeti)</th>
+                  <th>Egyezés</th>
+                  <th>Sofőr hozzárendelés</th>
+                  <th>Projekt</th>
+                  <th>Gép</th>
+                  <th>Kezdés</th>
+                  <th>Befejezés</th>
+                  <th style="width:70px;">Kihagyás</th>
+                </tr>
+              </thead>
+              <tbody id="reviewTableBody"></tbody>
+            </table>
+          </div>
+
+          <div style="margin-top:16px; display:flex; gap:10px; align-items:center;">
+            <button class="btn-primary" id="btnExecuteImport">Import végrehajtása</button>
+            <button class="btn-secondary" id="btnBackToSheets">Vissza</button>
+          </div>
+        </div>
+
+        <!-- 4. Eredmény banner (kezdetben rejtett) -->
+        <div id="importResult" style="display:none; margin-bottom:16px;"></div>
+
+      </div><!-- /.page-section import -->
+
+      <!-- ════════════════════════════════════════════════════════════
+           B) EXPORT SZEKCIÓ
+      ════════════════════════════════════════════════════════════ -->
+      <div class="page-section">
+        <p class="page-section-title">Adatexport</p>
+
+        <!-- Időszak + sofőr szűrősáv -->
+        <div class="export-filters">
+          <div class="filter-group">
+            <label class="form-label">Időszak</label>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <input type="date" id="exportFrom" class="form-input" style="width:150px;">
+              <span style="color:#7A6F5E; font-size:13px;">–</span>
+              <input type="date" id="exportTo"   class="form-input" style="width:150px;">
+            </div>
+          </div>
+          <div class="filter-group">
+            <label class="form-label">Sofőr (opcionális)</label>
+            <select id="exportSofor" class="form-input" style="width:200px;">
+              <option value="">Összes sofőr</option>
+              <!-- dinamikusan töltődik -->
+            </select>
+          </div>
+          <button class="btn-secondary" id="btnClearFilters">Szűrők törlése</button>
+        </div>
+
+        <div class="export-cards">
+          <!-- CSV export -->
+          <div class="export-card">
+            <h3>CSV export</h3>
+            <p>Napi tény szűrt exportja dátumtartomány és sofőr alapján, JOIN-olt mezőkkel</p>
+            <button id="btnExportCSV" class="btn-primary">Letöltés CSV</button>
+          </div>
+
+          <!-- XLSX export -->
+          <div class="export-card">
+            <h3>Excel export</h3>
+            <p>Napi tény + napi terv exportja .xlsx formátumban, két külön munkalapon</p>
+            <button id="btnExportXLSX" class="btn-primary">Letöltés XLSX</button>
+          </div>
+
+          <!-- SQLite export -->
+          <div class="export-card">
+            <h3>Adatbázis mentés</h3>
+            <p>Teljes .sqlite fájl letöltése biztonsági mentéshez</p>
+            <button id="btnExportSQLite" class="btn-primary">Letöltés .sqlite</button>
+          </div>
+        </div>
+      </div><!-- /.page-section export -->
+
+      <!-- ════════════════════════════════════════════════════════════
+           C) ADATBÁZIS VISSZAÁLLÍTÁS SZEKCIÓ
+      ════════════════════════════════════════════════════════════ -->
+      <div class="page-section">
+        <p class="page-section-title">Adatbázis visszaállítása</p>
+
+        <div class="restore-section">
+          <h3>Visszaállítás .sqlite fájlból</h3>
+          <p>Egy korábban mentett .sqlite fájl visszatöltése felülírja a jelenlegi adatokat.</p>
+          <input type="file" id="restoreInput" accept=".sqlite,.db" hidden>
+          <button id="btnRestore" class="btn-secondary">Fájl választása…</button>
+          <span id="restoreStatus"></span>
+        </div>
+      </div><!-- /.page-section restore -->
+
+    </div><!-- /.content-area -->
+
+  </div><!-- /.main-content -->
+</div><!-- /.app-layout -->
+
+<!-- ─── JavaScript (ES module) ─────────────────────────────────────────────── -->
+<script type="module">
+  import { initDB, getDB, saveToIndexedDB, exportDB, importDB } from './db.js';
+  import { getAllSoforok, getAllProjektek, getAllGepek } from './crud.js';
+  import { getIdentity } from './identity.js';
+  import {
+    readExcelFile,
+    getSheetsInfo,
+    normalizeRows,
+    buildImportPreview,
+    executeImport,
+    saveAliasIfNew,
+  } from './import.js';
+
+  // ─── Állapot ────────────────────────────────────────────────────────────────
+
+  /** @type {object|null} Az aktuálisan betöltött SheetJS workbook */
+  let workbook = null;
+
+  /** @type {Array<{ name, rowCount, detectedDate }>} Sheet-ek metaadatai */
+  let sheetsInfo = [];
+
+  /** @type {object|null} Az összeállított ImportPreview */
+  let importPreview = null;
+
+  /** @type {object[]} Összes sofőr az adatbázisból */
+  let soforok = [];
+
+  /** @type {object[]} Összes projekt az adatbázisból */
+  let projektek = [];
+
+  /** @type {object[]} Összes gép az adatbázisból */
+  let gepek = [];
+
+  // ─── Inicializálás ──────────────────────────────────────────────────────────
+
+  // Sidebar felhasználónév feltöltése
+  document.getElementById('sidebarUserName').textContent = getIdentity().name;
+
+  try {
+    await initDB();
+    soforok  = getAllSoforok();
+    projektek = getAllProjektek();
+    gepek    = getAllGepek();
+  } catch (err) {
+    document.querySelector('.content-area').innerHTML =
+      '<div class="error-banner">Adatbázis hiba — töltsd újra az oldalt: ' + escHtml(err.message) + '</div>';
+    console.error('[import_export] initDB hiba:', err);
+  }
+
+  // ─── Fájlfeltöltő zone ──────────────────────────────────────────────────────
+
+  const dropZone  = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('drag-over');
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  // Kattintás a drop zone-ra → file input megnyitása (de nem a label-re)
+  dropZone.addEventListener('click', (e) => {
+    if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
+      fileInput.click();
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handleFile(file);
+    // Input értékét töröljük, hogy ugyanaz a fájl újra feltölthető legyen
+    fileInput.value = '';
+  });
+
+  // ─── handleFile — fő import folyamat elindítása ──────────────────────────────
+
+  /**
+   * handleFile — Excel fájl betöltése, sheet selector megjelenítése.
+   *
+   * @param {File} file
+   */
+  async function handleFile(file) {
+    // Eredmény banner elrejtése új feltöltéskor
+    hideElement('importResult');
+    hideElement('reviewPanel');
+
+    try {
+      // Spinner jelzés a drop zone-ban
+      dropZone.innerHTML = `
+        <p><span class="spinner"></span> Fájl beolvasása: <strong>${escHtml(file.name)}</strong></p>
+      `;
+
+      workbook   = await readExcelFile(file);
+      sheetsInfo = getSheetsInfo(workbook);
+
+      renderSheetSelector(sheetsInfo);
+
+    } catch (err) {
+      // Visszaállítjuk az eredeti drop zone tartalmat
+      dropZone.innerHTML = `
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="10" fill="#fdecea"/>
+          <path d="M20 13v8M20 25v2" stroke="#C0392B" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <p style="color:var(--color-error);">Hiba: ${escHtml(err.message)}</p>
+        <p class="drop-hint">Próbálj egy másik fájlt</p>
+      `;
+      console.error('[import_export] handleFile hiba:', err);
+    }
+  }
+
+  // ─── renderSheetSelector — sheet-ek táblázata ────────────────────────────────
+
+  /**
+   * @param {Array<{ name, rowCount, detectedDate }>} sheets
+   */
+  function renderSheetSelector(sheets) {
+    const tbody = document.getElementById('sheetTableBody');
+    tbody.innerHTML = '';
+
+    sheets.forEach((sheet, idx) => {
+      const tr = document.createElement('tr');
+
+      // Checkbox: importálandó-e ez a sheet
+      const tdCheck = document.createElement('td');
+      const cb = document.createElement('input');
+      cb.type    = 'checkbox';
+      cb.checked = true;
+      cb.id      = `sheetCb_${idx}`;
+      tdCheck.appendChild(cb);
+      tr.appendChild(tdCheck);
+
+      // Sheet neve
+      const tdName = document.createElement('td');
+      tdName.style.fontWeight = '500';
+      tdName.textContent = sheet.name;
+      tr.appendChild(tdName);
+
+      // Érzékelt dátum — vagy kézi input
+      const tdDate = document.createElement('td');
+      if (sheet.detectedDate) {
+        tdDate.innerHTML = `<span class="match-badge match-badge--exact">${escHtml(sheet.detectedDate)}</span>`;
+      } else {
+        const dateInput = document.createElement('input');
+        dateInput.type        = 'date';
+        dateInput.id          = `sheetDate_${idx}`;
+        dateInput.style.cssText = 'height:30px; padding:0 8px; border:1px solid var(--color-border); border-radius:5px; font-size:12px; font-family:inherit; outline:none;';
+        dateInput.title       = 'Adja meg a dátumot kézzel';
+        tdDate.appendChild(dateInput);
+      }
+      tr.appendChild(tdDate);
+
+      // Sorok száma
+      const tdRows = document.createElement('td');
+      tdRows.style.textAlign = 'right';
+      tdRows.style.color     = 'var(--color-text-muted)';
+      tdRows.textContent     = sheet.rowCount;
+      tr.appendChild(tdRows);
+
+      tbody.appendChild(tr);
+    });
+
+    showElement('sheetSelector');
+
+    // Drop zone visszaállítása eredeti megjelenésre
+    dropZone.innerHTML = `
+      <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="40" height="40" rx="10" fill="#E9F5EE"/>
+        <path d="M20 26V14M15 19l5-5 5 5" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M13 28h14" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <p>Fájl betöltve: <strong>${escHtml(workbook.SheetNames.length)} sheet</strong> — húzz ide egy újat a cseréhez, vagy <label for="fileInput">tallózz</label></p>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
+      <p class="drop-hint">Támogatott formátumok: .xlsx, .xls</p>
+    `;
+
+    // Új file input csere után is kell event listener (a régi DOM-elem kicserélődött)
+    document.getElementById('fileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) handleFile(file);
+      e.target.value = '';
+    });
+  }
+
+  // ─── "Előnézet betöltése" gomb ───────────────────────────────────────────────
+
+  document.getElementById('btnLoadPreview').addEventListener('click', async () => {
+    if (!workbook) return;
+
+    // Összegyűjtjük a kiválasztott sheet-eket és dátumokat
+    const selectedSheets = [];
+
+    sheetsInfo.forEach((sheet, idx) => {
+      const cb = document.getElementById(`sheetCb_${idx}`);
+      if (!cb || !cb.checked) return;
+
+      let datum = sheet.detectedDate;
+
+      // Kézi dátum, ha nem volt érzékelt
+      if (!datum) {
+        const dateInput = document.getElementById(`sheetDate_${idx}`);
+        datum = dateInput ? dateInput.value : null;
+      }
+
+      selectedSheets.push({ sheetName: sheet.name, datum });
+    });
+
+    if (selectedSheets.length === 0) {
+      alert('Jelölj be legalább egy sheet-et!');
+      return;
+    }
+
+    try {
+      // buildImportPreview az összes sheet-re, majd szűrjük a kiválasztottakra
+      importPreview = buildImportPreview(workbook, soforok);
+
+      // A dátumot a kézi bevitelből is frissítjük — a preview sheet-jein az
+      // alapértelmezett datum-ot felülírjuk, ha a felhasználó megadta
+      selectedSheets.forEach(({ sheetName, datum }) => {
+        const previewSheet = importPreview.sheets.find(s => s.name === sheetName);
+        if (previewSheet && datum) {
+          previewSheet.datum = datum;
+          // A sorok datum mezőjét is frissítjük
+          previewSheet.rows.forEach(row => { row.datum = datum; });
+          previewSheet.matches.forEach(({ row }) => { row.datum = datum; });
+        }
+      });
+
+      // Csak a kiválasztott sheet-ek kellenek
+      const selectedNames = new Set(selectedSheets.map(s => s.sheetName));
+      importPreview.sheets = importPreview.sheets.filter(s => selectedNames.has(s.name));
+
+      // Statisztikák újraszámolása a szűrt sheet-ekre
+      recalcStats(importPreview);
+
+      renderReviewTable(importPreview);
+      hideElement('sheetSelector');
+      showElement('reviewPanel');
+
+    } catch (err) {
+      alert('Előnézet hiba: ' + err.message);
+      console.error('[import_export] preview hiba:', err);
+    }
+  });
+
+  document.getElementById('btnCancelImport').addEventListener('click', () => {
+    hideElement('sheetSelector');
+    workbook = null;
+  });
+
+  document.getElementById('btnBackToSheets').addEventListener('click', () => {
+    hideElement('reviewPanel');
+    showElement('sheetSelector');
+  });
+
+  // ─── renderReviewTable ───────────────────────────────────────────────────────
+
+  /**
+   * renderReviewTable — Megjeleníti az összes sor előnézetét sofőr egyeztetéssel.
+   *
+   * @param {object} preview ImportPreview
+   */
+  function renderReviewTable(preview) {
+    // Statisztika pillák
+    const statEl = document.getElementById('statPills');
+    const s = preview.stats;
+    statEl.innerHTML = `
+      <div class="stat-pill"><strong>${s.totalRows}</strong> sor összesen</div>
+      <div class="stat-pill" style="background:#E9F5EE; border-color:#B8DCC9;"><strong>${s.matchedExact}</strong> pontos egyezés</div>
+      <div class="stat-pill" style="background:#E9F5EE; border-color:#B8DCC9;"><strong>${s.matchedAlias}</strong> alias</div>
+      <div class="stat-pill" style="background:#FFFBF0; border-color:#F5D89A;"><strong>${s.matchedFuzzy}</strong> felcserélt sorrend</div>
+      <div class="stat-pill" style="background:#FFF8F0; border-color:#F5C89A;"><strong>${s.matchedLevenshtein}</strong> elgépelés</div>
+      <div class="stat-pill" style="background:#FEF3DC; border-color:#F5D89A;"><strong>${s.matchedPartial}</strong> részleges</div>
+      <div class="stat-pill" style="background:#FFF0EE; border-color:#F5C5BD;"><strong>${s.unmatched}</strong> ismeretlen</div>
+    `;
+
+    const tbody = document.getElementById('reviewTableBody');
+    tbody.innerHTML = '';
+
+    // Sor index a review callback-hez
+    let rowGlobalIdx = 0;
+
+    for (const sheet of preview.sheets) {
+      if (sheet.matches.length === 0) continue;
+
+      // Sheet elválasztó fejléc sor
+      const headerTr = document.createElement('tr');
+      headerTr.style.cssText = 'background:var(--color-surface-alt);';
+      headerTr.innerHTML = `
+        <td colspan="9" style="padding:7px 12px; font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--color-text-muted);">
+          ${escHtml(sheet.name)}${sheet.datum ? ' — ' + escHtml(sheet.datum) : ''}
+        </td>
+      `;
+      tbody.appendChild(headerTr);
+
+      for (const { row, match } of sheet.matches) {
+        const idx  = rowGlobalIdx++;
+        let rowClass = '';
+        let matchBadge = '';
+        let assignCell = '';
+
+        if (!match) {
+          // Ismeretlen sofőr — kötelező select vagy kihagyás
+          rowClass   = 'review-row--unknown';
+          matchBadge = '<span class="match-badge match-badge--unknown">✗ Ismeretlen</span>';
+          assignCell = buildSoforSelect(idx, null);
+
+        } else if (match.type === 'exact') {
+          rowClass   = 'review-row--exact';
+          matchBadge = '<span class="match-badge match-badge--exact">✓ Pontos egyezés</span>';
+          assignCell = `<span style="font-size:12px; font-weight:500; color:var(--color-accent);">${escHtml(match.sofor.teljes_nev)}</span>
+                        <input type="hidden" id="soforId_${idx}" value="${match.sofor.id}">`;
+
+        } else if (match.type === 'alias') {
+          rowClass   = 'review-row--alias';
+          matchBadge = '<span class="match-badge match-badge--alias">✓ Alias egyezés</span>';
+          assignCell = `<span style="font-size:12px; font-weight:500; color:var(--color-accent);">${escHtml(match.sofor.teljes_nev)}</span>
+                        <input type="hidden" id="soforId_${idx}" value="${match.sofor.id}">`;
+
+        } else if (match.type === 'fuzzy') {
+          // Felcserélt névsorrendnél a javasolt sofőr előre ki van választva, de módosítható
+          rowClass   = 'review-row--fuzzy';
+          matchBadge = '<span class="match-badge match-badge--fuzzy">~ Felcserélt sorrend</span>';
+          assignCell = buildSoforSelect(idx, match.sofor.id);
+
+        } else if (match.type === 'levenshtein') {
+          // Elgépelés esetén a javasolt sofőr előre ki van választva, de módosítható
+          rowClass   = 'review-row--levenshtein';
+          matchBadge = '<span class="match-badge match-badge--levenshtein">~ Elgépelés</span>';
+          assignCell = buildSoforSelect(idx, match.sofor.id);
+
+        } else if (match.type === 'partial') {
+          rowClass   = 'review-row--partial';
+          matchBadge = '<span class="match-badge match-badge--partial">? Részleges</span>';
+          // Módosítható select, de a javasolt sofőr van előre kiválasztva
+          assignCell = buildSoforSelect(idx, match.sofor.id);
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = rowClass;
+        tr.dataset.rowIdx = idx;
+
+        tr.innerHTML = `
+          <td style="font-size:12px; white-space:nowrap;">${escHtml(row.datum || '—')}</td>
+          <td style="font-weight:500;">${escHtml(row.rawSoforNev)}</td>
+          <td>${matchBadge}</td>
+          <td>${assignCell}</td>
+          <td style="font-size:12px; color:var(--color-text-secondary);">${escHtml(row.projektMunkaszam || '—')}</td>
+          <td style="font-size:12px; color:var(--color-text-secondary);">${escHtml(row.gepRendszam || '—')}</td>
+          <td style="font-size:12px;">${escHtml(row.kezdes || '—')}</td>
+          <td style="font-size:12px;">${escHtml(row.vegez || '—')}</td>
+          <td style="text-align:center;">
+            <input type="checkbox" id="skip_${idx}" title="Kihagyás">
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      }
+    }
+  }
+
+  /**
+   * buildSoforSelect — Sofőr kiválasztó <select> elem HTML-je.
+   * Ha selectedId adott, azt állítja be alapértelmezettnek.
+   *
+   * @param {number} idx        Sor indexe (DOM azonosításhoz)
+   * @param {number|null} selectedId
+   * @returns {string} HTML string
+   */
+  function buildSoforSelect(idx, selectedId) {
+    const options = soforok.map(s => {
+      const selected = s.id === selectedId ? ' selected' : '';
+      return `<option value="${s.id}"${selected}>${escHtml(s.teljes_nev)}</option>`;
+    }).join('');
+
+    return `
+      <select id="soforId_${idx}" style="max-width:200px;">
+        <option value="">— Kihagyás —</option>
+        ${options}
+      </select>
+    `;
+  }
+
+  // ─── "Import végrehajtása" gomb ──────────────────────────────────────────────
+
+  document.getElementById('btnExecuteImport').addEventListener('click', async () => {
+    if (!importPreview) return;
+
+    // Jóváhagyott sorok összegyűjtése — a match type-ot is megőrizzük az alias mentéshez
+    const approvedRows = [];
+    let globalIdx = 0;
+
+    for (const sheet of importPreview.sheets) {
+      for (const { row, match } of sheet.matches) {
+        const idx      = globalIdx++;
+        const skipCb   = document.getElementById(`skip_${idx}`);
+        const soforSel = document.getElementById(`soforId_${idx}`);
+
+        // Kihagyott vagy sofőr nélkül hagyott sorok → skippeljük
+        if (skipCb && skipCb.checked) continue;
+        if (!soforSel || !soforSel.value) continue;
+
+        approvedRows.push({
+          row,
+          soforId:   parseInt(soforSel.value, 10),
+          matchType: match ? match.type : null,   // null = manuálisan kiválasztott ismeretlen
+        });
+      }
+    }
+
+    if (approvedRows.length === 0) {
+      alert('Nincs jóváhagyott sor az importhoz.');
+      return;
+    }
+
+    const btn = document.getElementById('btnExecuteImport');
+    btn.disabled    = true;
+    btn.textContent = 'Importálás...';
+
+    try {
+      const result = await executeImport(approvedRows, projektek, gepek);
+
+      // Alias auto-mentés: minden nem-exact egyezésnél (alias, fuzzy, levenshtein, partial,
+      // vagy manuálisan kiválasztott ismeretlen) mentjük a rawName-t aliasként, ha még nincs.
+      // Ez nem blokkolja az importot — hibák csak console.error-ba kerülnek (saveAliasIfNew-ban).
+      const currentSoforok = getAllSoforok();
+      const savedAliasNames = new Set();
+      for (const { row, soforId, matchType } of approvedRows) {
+        if (matchType !== 'exact' && !savedAliasNames.has(row.rawSoforNev)) {
+          savedAliasNames.add(row.rawSoforNev);
+          await saveAliasIfNew(soforId, row.rawSoforNev, currentSoforok);
+        }
+      }
+      await saveToIndexedDB();
+
+      renderImportResult(result);
+      hideElement('reviewPanel');
+    } catch (err) {
+      alert('Import hiba: ' + err.message);
+      console.error('[import_export] executeImport hiba:', err);
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = 'Import végrehajtása';
+    }
+  });
+
+  // ─── renderImportResult ──────────────────────────────────────────────────────
+
+  /**
+   * renderImportResult — Import eredmény banner megjelenítése.
+   *
+   * @param {{ inserted: number, skipped: number, errors: string[] }} result
+   */
+  function renderImportResult(result) {
+    const container = document.getElementById('importResult');
+    const hasErrors = result.errors.length > 0;
+
+    const errorList = hasErrors
+      ? `<ul style="margin-top:8px; padding-left:18px; font-size:12px;">
+           ${result.errors.map(e => `<li>${escHtml(e)}</li>`).join('')}
+         </ul>`
+      : '';
+
+    container.innerHTML = `
+      <div class="result-banner ${hasErrors ? 'result-banner--error' : 'result-banner--success'}">
+        <span>${result.inserted} sor importálva</span>
+        <span>${result.skipped} sor kihagyva</span>
+        <span>${result.errors.length} hiba</span>
+        ${errorList}
+      </div>
+    `;
+
+    showElement('importResult');
+    // Adatok frissítése az esetlegesen újonnan felvett rekordok miatt
+    soforok   = getAllSoforok();
+    projektek = getAllProjektek();
+    gepek     = getAllGepek();
+  }
+
+  // ─── recalcStats ─────────────────────────────────────────────────────────────
+
+  function recalcStats(preview) {
+    const stats = {
+      totalRows: 0, matchedExact: 0, matchedAlias: 0,
+      matchedFuzzy: 0, matchedLevenshtein: 0, matchedPartial: 0, unmatched: 0,
+    };
+    for (const sheet of preview.sheets) {
+      stats.totalRows += sheet.rows.length;
+      for (const { match } of sheet.matches) {
+        if      (!match)                       stats.unmatched++;
+        else if (match.type === 'exact')       stats.matchedExact++;
+        else if (match.type === 'alias')       stats.matchedAlias++;
+        else if (match.type === 'fuzzy')       stats.matchedFuzzy++;
+        else if (match.type === 'levenshtein') stats.matchedLevenshtein++;
+        else if (match.type === 'partial')     stats.matchedPartial++;
+      }
+    }
+    preview.stats = stats;
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // B) EXPORT FUNKCIÓK
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // ─── Segédfüggvények a dátumkezeléshez ───────────────────────────────────────
+
+  /** YYYY-MM-DD formátumú mai dátum string */
+  function getTodayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  /**
+   * Adott dátumhoz n napot ad hozzá (negatív n esetén kivon).
+   *
+   * @param {string} dateStr YYYY-MM-DD
+   * @param {number} n       hozzáadandó napok száma (lehet negatív)
+   * @returns {string} YYYY-MM-DD
+   */
+  function addDays(dateStr, n) {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+
+  /**
+   * Gomb visszajelzés — kattintás után 1.5mp-re "Letöltve ✓" szöveget mutat,
+   * majd visszaállítja az eredeti feliratot.
+   *
+   * @param {HTMLButtonElement} btn
+   * @param {string}            originalText
+   */
+  function flashDownloadBtn(btn, originalText) {
+    btn.disabled    = true;
+    btn.textContent = 'Letöltve...';
+    setTimeout(() => {
+      btn.disabled    = false;
+      btn.textContent = originalText;
+    }, 1500);
+  }
+
+  // ─── Export szűrők alapértelmezett értékei ────────────────────────────────────
+
+  // exportFrom: 30 nappal ezelőtt; exportTo: mai nap
+  document.getElementById('exportFrom').value = addDays(getTodayStr(), -30);
+  document.getElementById('exportTo').value   = getTodayStr();
+
+  // ─── Sofőr select dinamikus feltöltése ───────────────────────────────────────
+
+  (function feltoltSoforSelect() {
+    const sel = document.getElementById('exportSofor');
+    soforok.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value       = s.id;
+      opt.textContent = s.teljes_nev;
+      sel.appendChild(opt);
+    });
+  })();
+
+  // ─── Szűrők törlése gomb ─────────────────────────────────────────────────────
+
+  document.getElementById('btnClearFilters').addEventListener('click', () => {
+    document.getElementById('exportFrom').value  = addDays(getTodayStr(), -30);
+    document.getElementById('exportTo').value    = getTodayStr();
+    document.getElementById('exportSofor').value = '';
+  });
+
+  // ─── CSV export ──────────────────────────────────────────────────────────────
+
+  /**
+   * exportCSV — Napi tény szűrt exportja CSV formátumban.
+   * JOIN-olja a sofőr, projekt és gép táblákat, hogy olvasható neveket exportáljon.
+   * UTF-8 BOM-ot rak az elejére az Excel kompatibilitás miatt.
+   */
+  async function exportCSV() {
+    const from    = document.getElementById('exportFrom').value;
+    const to      = document.getElementById('exportTo').value;
+    const soforId = document.getElementById('exportSofor').value;
+    const db      = getDB();
+
+    // JOIN-olt lekérdezés: napi_teny + sofőr, projekt, gép nevei
+    let sql = `
+      SELECT
+        t.datum,
+        s.teljes_nev        AS sofor,
+        p.munkaszam         AS projekt,
+        g.tipus             AS gep_tipus,
+        g.rendszam          AS gep_rendszam,
+        t.kezd_idopont      AS kezdes,
+        t.befejezes_idopont AS befejez,
+        t.munkaora,
+        t.fuvarok_szama     AS fuvarok,
+        t.megjegyzes
+      FROM napi_teny t
+      LEFT JOIN sofor   s ON t.sofor_id   = s.id
+      LEFT JOIN projekt p ON t.projekt_id = p.id
+      LEFT JOIN gep     g ON t.gep_id     = g.id
+      WHERE 1=1
+    `;
+    const params = [];
+    if (from)    { sql += ' AND t.datum >= ?';    params.push(from); }
+    if (to)      { sql += ' AND t.datum <= ?';    params.push(to);   }
+    if (soforId) { sql += ' AND t.sofor_id = ?';  params.push(parseInt(soforId, 10)); }
+    sql += ' ORDER BY t.datum, s.teljes_nev';
+
+    const result = db.exec(sql, params.length > 0 ? params : undefined);
+    if (!result[0]) {
+      alert('Nincs exportálható adat a megadott szűrőkre.');
+      return false;
+    }
+
+    const { columns, values } = result[0];
+
+    // CSV fejléc + sorok — pontosvesszőt tartalmazó értékeket idézőjelbe tesszük
+    const csvRows = [
+      columns.join(';'),
+      ...values.map(row =>
+        row.map(v => {
+          if (v == null) return '';
+          const str = String(v);
+          return str.includes(';') || str.includes('"') || str.includes('\n')
+            ? `"${str.replace(/"/g, '""')}"`
+            : str;
+        }).join(';')
+      ),
+    ];
+
+    // UTF-8 BOM (\uFEFF) az Excel helyes megjelenítéséhez
+    const csv  = '\uFEFF' + csvRows.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    downloadBlob(blob, `pilot-export-${from || 'all'}-${to || 'all'}.csv`);
+    return true;
+  }
+
+  document.getElementById('btnExportCSV').addEventListener('click', async () => {
+    const btn = document.getElementById('btnExportCSV');
+    try {
+      const ok = await exportCSV();
+      if (ok) flashDownloadBtn(btn, 'Letöltés CSV');
+    } catch (err) {
+      alert('CSV export hiba: ' + err.message);
+      console.error('[import_export] CSV export hiba:', err);
+    }
+  });
+
+  // ─── XLSX export ─────────────────────────────────────────────────────────────
+
+  /**
+   * exportXLSX — Napi tény és napi terv exportja .xlsx formátumban.
+   * Két munkalapot hoz létre: "Napi tények" (szűrt) és "Napi terv" (teljes).
+   */
+  async function exportXLSX() {
+    const from    = document.getElementById('exportFrom').value;
+    const to      = document.getElementById('exportTo').value;
+    const soforId = document.getElementById('exportSofor').value;
+    const db      = getDB();
+
+    // 1. munkalap: napi_teny — ugyanaz a JOIN-olt query mint a CSV-nél
+    let sql = `
+      SELECT
+        t.datum,
+        s.teljes_nev        AS sofor,
+        p.munkaszam         AS projekt,
+        g.tipus             AS gep_tipus,
+        g.rendszam          AS gep_rendszam,
+        t.kezd_idopont      AS kezdes,
+        t.befejezes_idopont AS befejez,
+        t.munkaora,
+        t.fuvarok_szama     AS fuvarok,
+        t.megjegyzes
+      FROM napi_teny t
+      LEFT JOIN sofor   s ON t.sofor_id   = s.id
+      LEFT JOIN projekt p ON t.projekt_id = p.id
+      LEFT JOIN gep     g ON t.gep_id     = g.id
+      WHERE 1=1
+    `;
+    const params = [];
+    if (from)    { sql += ' AND t.datum >= ?';   params.push(from); }
+    if (to)      { sql += ' AND t.datum <= ?';   params.push(to);   }
+    if (soforId) { sql += ' AND t.sofor_id = ?'; params.push(parseInt(soforId, 10)); }
+    sql += ' ORDER BY t.datum, s.teljes_nev';
+
+    const result = db.exec(sql, params.length > 0 ? params : undefined);
+    if (!result[0]) {
+      alert('Nincs exportálható adat.');
+      return false;
+    }
+
+    const { columns, values } = result[0];
+
+    // sql.js eredmény → JS objektumok tömbje → XLSX sheet
+    const jsonData = values.map(row => {
+      const obj = {};
+      columns.forEach((c, i) => { obj[c] = row[i]; });
+      return obj;
+    });
+
+    const ws = window.XLSX.utils.json_to_sheet(jsonData, { header: columns });
+    const wb = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb, ws, 'Napi tények');
+
+    // 2. munkalap: napi_terv (szűrők nélkül, teljes táblázat)
+    const tervResult = db.exec(`
+      SELECT
+        t.datum,
+        s.teljes_nev   AS sofor,
+        p.munkaszam    AS projekt,
+        g.tipus        AS gep,
+        t.kezdes,
+        t.vegez,
+        t.allapot,
+        t.forras
+      FROM napi_terv t
+      LEFT JOIN sofor   s ON t.sofor_id   = s.id
+      LEFT JOIN projekt p ON t.projekt_id = p.id
+      LEFT JOIN gep     g ON t.gep_id     = g.id
+      ORDER BY t.datum, s.teljes_nev
+    `);
+
+    if (tervResult[0]) {
+      const tervData = tervResult[0].values.map(row => {
+        const obj = {};
+        tervResult[0].columns.forEach((c, i) => { obj[c] = row[i]; });
+        return obj;
+      });
+      const ws2 = window.XLSX.utils.json_to_sheet(tervData, { header: tervResult[0].columns });
+      window.XLSX.utils.book_append_sheet(wb, ws2, 'Napi terv');
+    }
+
+    window.XLSX.writeFile(wb, `pilot-export-${from || 'all'}.xlsx`);
+    return true;
+  }
+
+  document.getElementById('btnExportXLSX').addEventListener('click', async () => {
+    const btn = document.getElementById('btnExportXLSX');
+    try {
+      const ok = await exportXLSX();
+      if (ok) flashDownloadBtn(btn, 'Letöltés XLSX');
+    } catch (err) {
+      alert('XLSX export hiba: ' + err.message);
+      console.error('[import_export] XLSX export hiba:', err);
+    }
+  });
+
+  // ─── SQLite export ────────────────────────────────────────────────────────────
+
+  document.getElementById('btnExportSQLite').addEventListener('click', () => {
+    const btn = document.getElementById('btnExportSQLite');
+    try {
+      exportDB(`pilot-eroforras_${getTodayStr()}.sqlite`);
+      flashDownloadBtn(btn, 'Letöltés .sqlite');
+    } catch (err) {
+      alert('SQLite export hiba: ' + err.message);
+    }
+  });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // C) ADATBÁZIS VISSZAÁLLÍTÁS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  const restoreInput  = document.getElementById('restoreInput');
+  const restoreStatus = document.getElementById('restoreStatus');
+
+  document.getElementById('btnRestore').addEventListener('click', () => {
+    restoreInput.click();
+  });
+
+  restoreInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    restoreInput.value = '';
+
+    restoreStatus.textContent = '';
+    restoreStatus.className   = '';
+
+    const btn = document.getElementById('btnRestore');
+    btn.disabled    = true;
+    btn.textContent = 'Visszaállítás...';
+
+    try {
+      await importDB(file);
+
+      // Adatok újratöltése az új adatbázisból
+      soforok   = getAllSoforok();
+      projektek = getAllProjektek();
+      gepek     = getAllGepek();
+
+      restoreStatus.textContent = `Sikeresen visszaállítva: ${file.name}`;
+      restoreStatus.className   = 'status-ok';
+
+    } catch (err) {
+      restoreStatus.textContent = 'Visszaállítási hiba: ' + err.message;
+      restoreStatus.className   = 'status-err';
+      console.error('[import_export] importDB hiba:', err);
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = 'Fájl választása…';
+    }
+  });
+
+  // ─── Segédfüggvények ─────────────────────────────────────────────────────────
+
+  function showElement(id) {
+    document.getElementById(id).style.display = '';
+  }
+
+  function hideElement(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /**
+   * downloadBlob — Blob letöltés triggere böngészőben.
+   *
+   * @param {Blob}   blob
+   * @param {string} filename
+   */
+  function downloadBlob(blob, filename) {
+    const url    = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href     = url;
+    anchor.download = filename;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+</script>
+</body>
+</html>

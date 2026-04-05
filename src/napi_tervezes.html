@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Napi tervezés | Pilot Erőforrás</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared.css" />
+  <style>
+    /* ─── Dátumnavigátor ──────────────────────────────────────────────────── */
+    .date-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 16px;
+    }
+    .date-nav-btn {
+      background: #F5F4F1;
+      border: 1px solid #E8E6E1;
+      border-radius: 5px;
+      padding: 6px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    .date-nav-btn:hover {
+      background: #EDEBE6;
+      border-color: #C8C4BC;
+    }
+    .date-pill {
+      border: 1.5px solid #2D6A4F;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-family: 'Inter', system-ui;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1A1C1E;
+      white-space: nowrap;
+    }
+
+    /* ─── Forrásnapot jelző kis felirat ───────────────────────────────────── */
+    .source-date-label {
+      font-family: 'Inter', system-ui;
+      font-size: 12px;
+      color: #A09688;
+      margin-left: 8px;
+      white-space: nowrap;
+    }
+
+    /* ─── Tervezés tartalom ───────────────────────────────────────────────── */
+    .tervezes-content {
+      padding: 20px 32px;
+      gap: 12px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    /* ─── Összefoglaló sáv ────────────────────────────────────────────────── */
+    .summary-bar {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 12px 20px;
+      background: #FFFFFF;
+      border: 1px solid #E8E6E1;
+      border-radius: 8px;
+    }
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .summary-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .summary-dot--pending  { background: #C8C4BC; }
+    .summary-dot--accepted { background: #2D6A4F; }
+    .summary-dot--modified { background: #E8A030; }
+    .summary-dot--rejected { background: #C0392B; }
+    .summary-label {
+      font-family: 'Inter', system-ui;
+      font-size: 13px;
+      color: #7A6F5E;
+    }
+    .summary-count {
+      font-family: 'Inter', system-ui;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1A1C1E;
+    }
+
+    /* ─── Táblázat ────────────────────────────────────────────────────────── */
+    .tervezes-table {
+      background: #FFFFFF;
+      border: 1px solid #E8E6E1;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .pt-header {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      gap: 8px;
+      background: #FAFAF8;
+      border-bottom: 1px solid #E8E6E1;
+      min-height: 41px;
+    }
+    .pt-header-text {
+      font-family: system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: #7A6F5E;
+    }
+
+    /* ─── Sorállapotok ────────────────────────────────────────────────────── */
+    .pt-row {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      gap: 8px;
+      border-bottom: 1px solid #F0EEE9;
+      min-height: 44px;
+      transition: background 0.15s;
+    }
+    .pt-row:last-child { border-bottom: none; }
+    .pt-row--pending   { background: #FFFFFF; }
+    .pt-row--accepted  { background: #FAFDFB; }
+    .pt-row--modified  { background: #FFFEF5; }
+    .pt-row--rejected  { background: #FDF8F7; opacity: 0.7; }
+    .pt-row--editing   {
+      background: #FFFFFF;
+      box-shadow: inset 0 0 0 2px #2D6A4F;
+      border-radius: 4px;
+      min-height: 55px;
+    }
+
+    /* ─── Státusz dot oszlop ──────────────────────────────────────────────── */
+    .pt-col-dot {
+      width: 36px;
+      min-width: 36px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .pt-status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .pt-status-dot--pending  { background: #C8C4BC; }
+    .pt-status-dot--accepted { background: #2D6A4F; }
+    .pt-status-dot--modified { background: #E8A030; }
+    .pt-status-dot--rejected { background: #C0392B; }
+
+    /* ─── Oszlop flex ─────────────────────────────────────────────────────── */
+    .pt-col-sofor   { flex: 2.5; min-width: 0; }
+    .pt-col-projekt { flex: 2.5; min-width: 0; }
+    .pt-col-gep     { flex: 2.0; min-width: 0; }
+    .pt-col-kezdes  { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
+    .pt-col-befejez { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
+    .pt-col-decision {
+      width: 110px;
+      min-width: 110px;
+      flex-shrink: 0;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .pt-col-actions {
+      width: 72px;
+      min-width: 72px;
+      flex-shrink: 0;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    /* ─── Cella szöveg ────────────────────────────────────────────────────── */
+    .pt-cell-text {
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 20px;
+      color: #1A1C1E;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+    }
+    .pt-cell-text--muted { color: #A09688; }
+
+    /* ─── Módosítva cella — kételemű ──────────────────────────────────────── */
+    .pt-modified-cell { display: flex; flex-direction: column; gap: 2px; }
+    .pt-modified-current {
+      font-family: system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: #1A1C1E;
+    }
+    .pt-modified-prev {
+      font-family: system-ui, sans-serif;
+      font-size: 10px;
+      color: #A09688;
+    }
+
+    /* ─── OK / Nem döntés gombok ──────────────────────────────────────────── */
+    .btn-ok {
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #2D6A4F;
+      background: #E9F5EE;
+      color: #2D6A4F;
+      font-family: 'Inter', system-ui;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-ok:hover  { background: #2D6A4F; color: #FFFFFF; }
+    .btn-nem {
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid #E8E6E1;
+      background: #F5F4F1;
+      color: #7A6F5E;
+      font-family: 'Inter', system-ui;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-nem:hover { border-color: #C0392B; color: #C0392B; background: #FFF5F5; }
+
+    /* ─── Állapot badge (elfogadva/módosítva jóváhagyás után) ────────────── */
+    .pt-badge {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'Inter', system-ui;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .pt-badge--accepted { background: #E9F5EE; color: #2D6A4F; }
+    .pt-badge--modified { background: #FEF3DC; color: #E8A030; }
+    .pt-badge--rejected { background: #FFF0EE; color: #C0392B; }
+
+    /* ─── Inline input szerkesztéshez ─────────────────────────────────────── */
+    .pt-input {
+      background: #F5F4F1;
+      border: 1px solid #C5DDD1;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      color: #1A1C1E;
+      width: 100%;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .pt-input:focus { border: 1.5px solid #2D6A4F; background: #FFFFFF; }
+    .pt-input--time { text-align: center; }
+
+    /* ─── "Terv véglegesítése" gomb ───────────────────────────────────────── */
+    .btn-vegglegesit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: #2D6A4F;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Inter', system-ui;
+      font-size: 14px;
+      font-weight: 600;
+      color: #E9F5EE;
+      width: 100%;
+    }
+    .btn-vegglegesit:hover    { background: #255c43; }
+    .btn-vegglegesit:disabled { background: #C8C4BC; cursor: default; }
+
+    /* ─── Üres állapot ────────────────────────────────────────────────────── */
+    .pt-empty {
+      padding: 32px 16px;
+      text-align: center;
+      color: #A09688;
+      font-size: 13px;
+      font-family: 'Inter', system-ui;
+    }
+
+    /* ─── Másodlagos gomb (Javaslat generálása) ───────────────────────────── */
+    .btn-secondary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: #F5F4F1;
+      border: 1px solid #C8C4BC;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Inter', system-ui;
+      font-size: 13px;
+      font-weight: 500;
+      color: #3D3830;
+    }
+    .btn-secondary:hover {
+      background: #EDEBE6;
+      border-color: #A09688;
+    }
+  </style>
+</head>
+<body id="appRoot">
+
+<div class="app-layout">
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div>
+        <div class="brand-label">Pilot</div>
+        <div class="brand-name">Erőforrás</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- Dashboard -->
+      <a class="nav-item" href="./index.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        Dashboard
+      </a>
+      <!-- Sofőrök -->
+      <a class="nav-item" href="./soforok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Sofőrök
+      </a>
+      <!-- Projektek -->
+      <a class="nav-item" href="./projektek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Projektek
+      </a>
+      <!-- Gépek -->
+      <a class="nav-item" href="./gepek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="6" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M11 8h2.5l1 2.5V12h-3.5V8z" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="4" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+          <circle cx="11.5" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        Gépek
+      </a>
+      <div class="nav-divider"></div>
+      <!-- Napi rögzítés -->
+      <a class="nav-item" href="./napi_rogzites.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5.5 10.5l1.5 1.5 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Napi rögzítés
+      </a>
+      <!-- Napi tervezés — aktív -->
+      <a class="nav-item active" href="./napi_tervezes.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 10h4M5 12.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Napi tervezés
+      </a>
+      <!-- Import / Export -->
+      <a class="nav-item" href="./import_export.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Import / Export
+      </a>
+      <!-- Beállítások -->
+      <a class="nav-item" href="./settings.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        Beállítások
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user-info" id="sidebarUserInfo">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <span id="sidebarUserName">—</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Fő tartalom ──────────────────────────────────────────────────────── -->
+  <div class="main-content">
+
+    <!-- ─── Page Header ─────────────────────────────────────────────────────── -->
+    <header class="page-header" style="justify-content: space-between;">
+
+      <!-- Bal: cím + dátumnavigátor + forrásnapot jelző felirat -->
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+        <div class="page-header-left">
+          <h1 class="page-title">Napi tervezés</h1>
+        </div>
+        <div class="date-nav">
+          <button class="date-nav-btn" id="btnPrevDay" title="Előző nap">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M9 3L5 7l4 4" stroke="#7A6F5E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="date-pill" id="currentDatePill">—</div>
+          <button class="date-nav-btn" id="btnNextDay" title="Következő nap">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M5 3l4 4-4 4" stroke="#7A6F5E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        <span class="source-date-label" id="sourceDateLabel">Forrás: —</span>
+      </div>
+
+      <!-- Jobb: Javaslat generálása + Mentés gombok -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn-secondary" id="btnGenerate">
+          <!-- Varázspálca / generálás ikon -->
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 12L9 5M9 5l2-2 1 1-2 2M9 5l1 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="11.5" cy="2.5" r="1" fill="currentColor"/>
+          </svg>
+          Javaslat generálása
+        </button>
+        <button class="btn-primary" id="btnSave">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7l3.5 3.5L12 3" stroke="#E9F5EE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Mentés
+        </button>
+      </div>
+    </header>
+
+    <!-- ─── Tervezés tartalom ──────────────────────────────────────────────── -->
+    <div class="tervezes-content">
+
+      <!-- Összefoglaló sáv -->
+      <div class="summary-bar" id="summaryBar">
+        <div class="summary-item">
+          <span class="summary-dot summary-dot--pending"></span>
+          <span class="summary-label">Várakozó:</span>
+          <span class="summary-count" id="cnt-pending">0</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-dot summary-dot--accepted"></span>
+          <span class="summary-label">Elfogadva:</span>
+          <span class="summary-count" id="cnt-accepted">0</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-dot summary-dot--modified"></span>
+          <span class="summary-label">Módosítva:</span>
+          <span class="summary-count" id="cnt-modified">0</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-dot summary-dot--rejected"></span>
+          <span class="summary-label">Elutasítva:</span>
+          <span class="summary-count" id="cnt-rejected">0</span>
+        </div>
+      </div>
+
+      <!-- Tervező táblázat -->
+      <div class="tervezes-table">
+        <div class="pt-header">
+          <!-- Státusz dot helyfoglaló -->
+          <div class="pt-col-dot"></div>
+          <div class="pt-col-sofor   pt-header-text">Sofőr</div>
+          <div class="pt-col-projekt pt-header-text">Projekt / munkaszám</div>
+          <div class="pt-col-gep     pt-header-text">Gép</div>
+          <div class="pt-col-kezdes  pt-header-text" style="text-align:center;">Kezdés</div>
+          <div class="pt-col-befejez pt-header-text" style="text-align:center;">Befejezés</div>
+          <div class="pt-col-decision pt-header-text" style="justify-content:flex-end;">Döntés</div>
+          <div class="pt-col-actions"></div>
+        </div>
+        <!-- Sorok dinamikusan töltődnek -->
+        <div id="rowContainer">
+          <div class="pt-empty">
+            Nincs tervezett sor. Kattints a "Javaslat generálása" gombra az előző nap tényei alapján.
+          </div>
+        </div>
+      </div>
+
+      <!-- Terv véglegesítése gomb -->
+      <button class="btn-vegglegesit" id="btnVegglegesit" disabled>Terv véglegesítése</button>
+    </div>
+
+  </div><!-- .main-content -->
+</div><!-- .app-layout -->
+
+<!-- Gép autocomplete datalist -->
+<datalist id="gep-list"></datalist>
+
+<!-- sql.js WASM — szükséges az initDB()-hez -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+
+<script type="module">
+import { initDB, saveToIndexedDB } from './db.js';
+import {
+  getAllSoforok, getAllProjektek, getAllGepek,
+  getNapiTenyByDatum,
+  createNapiTerv, getNapiTervByDatum, updateNapiTerv, deleteNapiTerv
+} from './crud.js';
+import { getIdentity } from './identity.js';
+
+// ─── Állapot ─────────────────────────────────────────────────────────────────
+
+let planDate   = getTomorrowStr(); // a TERVEZETT nap (alap: holnap)
+let sourceDate = getTodayStr();    // az ALAP nap (ahonnan generálunk, alap: ma)
+let allSoforok = [], allProjektek = [], allGepek = [];
+let rows = [];
+// rows elem struktúra:
+// {
+//   id,          — null ha még nincs DB rekord, number ha már mentett
+//   sofor_id, sofor_nev,
+//   projekt_id, projekt_nev,
+//   gep_id, gep_nev,
+//   kezdes, vegez,
+//   allapot: 'javasolt'|'elfogadott'|'modositott'|'elutasitott',
+//   forras: 'auto'|'manualis',
+//   decision: 'pending'|'accepted'|'modified'|'rejected',
+//   origKezdes, origVegez, origGepNev   — eredeti értékek módosítás-jelzéshez
+// }
+let editingIdx  = null;
+let isFinalized = false;
+
+// ─── Dátum segédfüggvények ───────────────────────────────────────────────────
+
+function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getTomorrowStr() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function addDays(dateStr, n) {
+  // T00:00:00 nélkül a timezone-shift egy napot csúsztathat
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function getDayName(dateStr) {
+  const days = ['vasárnap', 'hétfő', 'kedd', 'szerda', 'csütörtök', 'péntek', 'szombat'];
+  return days[new Date(dateStr + 'T00:00:00').getDay()];
+}
+
+// ─── Dátum pill frissítés ─────────────────────────────────────────────────────
+
+function updateDatePill() {
+  const isToday    = planDate === getTodayStr();
+  const isTomorrow = planDate === getTomorrowStr();
+  let label = planDate + ' — ' + getDayName(planDate);
+  if (isToday)    label += ' (ma)';
+  else if (isTomorrow) label += ' (holnap)';
+  document.getElementById('currentDatePill').textContent = label;
+
+  // Forrás nap felirat
+  document.getElementById('sourceDateLabel').textContent =
+    'Forrás: ' + sourceDate + ' (' + getDayName(sourceDate) + ') tények';
+}
+
+// ─── Summary bar ─────────────────────────────────────────────────────────────
+
+function updateSummary() {
+  const counts = { pending: 0, accepted: 0, modified: 0, rejected: 0 };
+  rows.forEach(r => {
+    if (counts[r.decision] !== undefined) counts[r.decision]++;
+  });
+  document.getElementById('cnt-pending').textContent  = counts.pending;
+  document.getElementById('cnt-accepted').textContent = counts.accepted;
+  document.getElementById('cnt-modified').textContent = counts.modified;
+  document.getElementById('cnt-rejected').textContent = counts.rejected;
+}
+
+// ─── Javaslat generálása (forrás nap tényeiből) ───────────────────────────────
+
+async function generatePlan() {
+  // getNapiTenyByDatum szinkron, de await biztonságos (no-op Promise wrapping)
+  const tenyAdatok = getNapiTenyByDatum(sourceDate);
+  if (tenyAdatok.length === 0) {
+    alert(
+      'Nincs rögzített tényadat erre a napra: ' + sourceDate +
+      '. Válassz másik forrásnapot!'
+    );
+    return;
+  }
+
+  rows = tenyAdatok.map(t => {
+    const sofor   = allSoforok.find(s => s.id === t.sofor_id);
+    const projekt = allProjektek.find(p => p.id === t.projekt_id);
+    const gep     = allGepek.find(g => g.id === t.gep_id);
+    const gepNev  = gep ? [gep.tipus, gep.rendszam].filter(Boolean).join(' – ') : '';
+    return {
+      id:          null,
+      sofor_id:    t.sofor_id,
+      sofor_nev:   sofor?.teljes_nev || '—',
+      projekt_id:  t.projekt_id,
+      projekt_nev: projekt?.munkaszam || '',
+      gep_id:      t.gep_id,
+      gep_nev:     gepNev,
+      kezdes:      t.kezd_idopont,
+      vegez:       t.befejezes_idopont,
+      allapot:     'javasolt',
+      forras:      'auto',
+      decision:    'pending',
+      origKezdes:  t.kezd_idopont,
+      origVegez:   t.befejezes_idopont,
+      origGepNev:  gepNev,
+    };
+  });
+
+  isFinalized = false;
+  editingIdx  = null;
+  renderRows();
+  updateSummary();
+  document.getElementById('btnVegglegesit').disabled = false;
+}
+
+// ─── Meglévő terv betöltése ──────────────────────────────────────────────────
+
+async function loadExistingPlan() {
+  // getNapiTervByDatum szinkron
+  const tervAdatok = getNapiTervByDatum(planDate);
+  if (tervAdatok.length === 0) return false;
+
+  rows = tervAdatok.map(t => {
+    const sofor   = allSoforok.find(s => s.id === t.sofor_id);
+    const projekt = allProjektek.find(p => p.id === t.projekt_id);
+    const gep     = allGepek.find(g => g.id === t.gep_id);
+    const gepNev  = gep ? [gep.tipus, gep.rendszam].filter(Boolean).join(' – ') : '';
+
+    // DB állapot → UI decision leképezés
+    const dec = t.allapot === 'elfogadott'  ? 'accepted'
+              : t.allapot === 'modositott'  ? 'modified'
+              : t.allapot === 'elutasitott' ? 'rejected'
+              : 'pending';
+
+    return {
+      id:          t.id,
+      sofor_id:    t.sofor_id,
+      sofor_nev:   sofor?.teljes_nev || '—',
+      projekt_id:  t.projekt_id,
+      projekt_nev: projekt?.munkaszam || '',
+      gep_id:      t.gep_id,
+      gep_nev:     gepNev,
+      kezdes:      t.kezdes,
+      vegez:       t.vegez,
+      allapot:     t.allapot,
+      forras:      t.forras,
+      decision:    dec,
+      origKezdes:  t.kezdes,
+      origVegez:   t.vegez,
+      origGepNev:  gepNev,
+    };
+  });
+
+  // Véglegesítettnek tekintjük ha nincs pending sor
+  isFinalized = rows.every(r => r.decision !== 'pending');
+  return true;
+}
+
+// ─── Döntés kezelők (window scope — inline onclick-ból hívódnak) ──────────────
+
+window.handleAccept = function(idx) {
+  rows[idx].decision = 'accepted';
+  rows[idx].allapot  = 'elfogadott';
+  renderRows();
+  updateSummary();
+};
+
+window.handleReject = function(idx) {
+  rows[idx].decision = 'rejected';
+  rows[idx].allapot  = 'elutasitott';
+  renderRows();
+  updateSummary();
+};
+
+window.handleEdit = function(idx) {
+  editingIdx         = idx;
+  rows[idx].decision = 'modified'; // szerkesztés közben módosítottnak jelöljük
+  renderRows();
+  updateSummary();
+  // Fókusz az első input mezőre a render után
+  setTimeout(() => document.getElementById('pt_kezdes_' + idx)?.focus(), 50);
+};
+
+window.handleSaveEdit = function(idx) {
+  const kezdes = document.getElementById('pt_kezdes_' + idx)?.value || null;
+  const vegez  = document.getElementById('pt_vegez_' + idx)?.value  || null;
+  const gepNev = (document.getElementById('pt_gep_' + idx)?.value?.trim()) || rows[idx].gep_nev;
+
+  // Megpróbáljuk azonosítani a gépet a névből (datalist autocomplete alapján)
+  const gep = allGepek.find(g =>
+    [g.tipus, g.rendszam].filter(Boolean).join(' – ') === gepNev ||
+    g.tipus === gepNev
+  );
+
+  // Ténylegesen módosult-e valami az eredeti javaslathoz képest?
+  const changed =
+    kezdes !== rows[idx].origKezdes ||
+    vegez  !== rows[idx].origVegez  ||
+    gepNev !== rows[idx].origGepNev;
+
+  rows[idx].kezdes   = kezdes;
+  rows[idx].vegez    = vegez;
+  rows[idx].gep_id   = gep?.id ?? rows[idx].gep_id;
+  rows[idx].gep_nev  = gepNev;
+  rows[idx].decision = changed ? 'modified'   : 'accepted';
+  rows[idx].allapot  = changed ? 'modositott' : 'elfogadott';
+  editingIdx = null;
+  renderRows();
+  updateSummary();
+};
+
+window.handleCancelEdit = function(idx) {
+  // Ha nem volt korábbi döntés és az értékek nem változtak, visszaáll pending-re
+  if (rows[idx].id === null && rows[idx].origKezdes === rows[idx].kezdes) {
+    rows[idx].decision = 'pending';
+    rows[idx].allapot  = 'javasolt';
+  }
+  editingIdx = null;
+  renderRows();
+  updateSummary();
+};
+
+window.handleRemoveRow = function(idx) {
+  rows.splice(idx, 1);
+  // editingIdx újraszámítása ha a törölt sor előtt vagy éppen a szerkesztett volt
+  if (editingIdx === idx)      editingIdx = null;
+  else if (editingIdx > idx)   editingIdx--;
+  renderRows();
+  updateSummary();
+};
+
+// ─── Sor HTML összerakása ─────────────────────────────────────────────────────
+
+function buildRowHTML(row, idx) {
+  const isEditing = editingIdx === idx;
+  const rowCls = isEditing
+    ? 'pt-row pt-row--editing'
+    : `pt-row pt-row--${row.decision === 'pending' ? 'pending' : row.decision}`;
+
+  // Státusz dot
+  const dotCls = `pt-status-dot pt-status-dot--${row.decision}`;
+
+  // Sofőr + Projekt — mindig csak szöveg (nem szerkeszthető inline)
+  const soforCell = `
+    <div class="pt-col-sofor">
+      <span class="pt-cell-text">${escHtml(row.sofor_nev)}</span>
+    </div>`;
+  const projektCell = `
+    <div class="pt-col-projekt">
+      <span class="pt-cell-text${row.projekt_nev ? '' : ' pt-cell-text--muted'}">
+        ${escHtml(row.projekt_nev || '—')}
+      </span>
+    </div>`;
+
+  // Gép cella — szerkesztéskor input, módosítottnál kételemű megjelenítés
+  let gepCell;
+  if (isEditing) {
+    gepCell = `
+      <div class="pt-col-gep">
+        <input class="pt-input" id="pt_gep_${idx}"
+          value="${escAttr(row.gep_nev || '')}"
+          list="gep-list"
+          autocomplete="off"
+          placeholder="Gép neve…">
+      </div>`;
+  } else if (row.decision === 'modified' && row.gep_nev !== row.origGepNev) {
+    gepCell = `
+      <div class="pt-col-gep">
+        <div class="pt-modified-cell">
+          <span class="pt-modified-current">${escHtml(row.gep_nev || '—')}</span>
+          <span class="pt-modified-prev">volt: ${escHtml(row.origGepNev || '—')}</span>
+        </div>
+      </div>`;
+  } else {
+    gepCell = `
+      <div class="pt-col-gep">
+        <span class="pt-cell-text${row.gep_nev ? '' : ' pt-cell-text--muted'}">
+          ${escHtml(row.gep_nev || '—')}
+        </span>
+      </div>`;
+  }
+
+  // Kezdés / Befejezés cellák
+  let kezdesCell, vegezCell;
+  if (isEditing) {
+    kezdesCell = `
+      <div class="pt-col-kezdes">
+        <input class="pt-input pt-input--time" id="pt_kezdes_${idx}"
+          type="time" value="${escAttr(row.kezdes || '')}">
+      </div>`;
+    vegezCell = `
+      <div class="pt-col-befejez">
+        <input class="pt-input pt-input--time" id="pt_vegez_${idx}"
+          type="time" value="${escAttr(row.vegez || '')}">
+      </div>`;
+  } else if (row.decision === 'modified') {
+    const kezdChanged = row.kezdes !== row.origKezdes;
+    const vegezChanged = row.vegez !== row.origVegez;
+    kezdesCell = `
+      <div class="pt-col-kezdes">
+        <div class="pt-modified-cell" style="align-items:center;">
+          <span class="pt-modified-current">${escHtml(row.kezdes || '—')}</span>
+          ${kezdChanged ? `<span class="pt-modified-prev">volt: ${escHtml(row.origKezdes || '—')}</span>` : ''}
+        </div>
+      </div>`;
+    vegezCell = `
+      <div class="pt-col-befejez">
+        <div class="pt-modified-cell" style="align-items:center;">
+          <span class="pt-modified-current">${escHtml(row.vegez || '—')}</span>
+          ${vegezChanged ? `<span class="pt-modified-prev">volt: ${escHtml(row.origVegez || '—')}</span>` : ''}
+        </div>
+      </div>`;
+  } else {
+    kezdesCell = `
+      <div class="pt-col-kezdes">
+        <span class="pt-cell-text">${escHtml(row.kezdes || '—')}</span>
+      </div>`;
+    vegezCell = `
+      <div class="pt-col-befejez">
+        <span class="pt-cell-text">${escHtml(row.vegez || '—')}</span>
+      </div>`;
+  }
+
+  // Döntés oszlop: szerkesztés közben Kész/Mégse, pending-nél OK/Nem, egyébként badge
+  let decisionCell;
+  if (isEditing) {
+    decisionCell = `
+      <div class="pt-col-decision">
+        <button class="btn-ok"  onclick="handleSaveEdit(${idx})">&#10003; Kész</button>
+        <button class="btn-nem" onclick="handleCancelEdit(${idx})">Mégse</button>
+      </div>`;
+  } else if (row.decision === 'pending') {
+    decisionCell = `
+      <div class="pt-col-decision">
+        <button class="btn-ok"  onclick="handleAccept(${idx})">OK</button>
+        <button class="btn-nem" onclick="handleReject(${idx})">Nem</button>
+      </div>`;
+  } else {
+    const badgeCls = `pt-badge pt-badge--${row.decision}`;
+    const badgeTxt = row.decision === 'accepted' ? 'elfogadva'
+                   : row.decision === 'modified' ? 'módosítva'
+                   : 'elutasítva';
+    decisionCell = `
+      <div class="pt-col-decision">
+        <span class="${badgeCls}">${badgeTxt}</span>
+      </div>`;
+  }
+
+  // Műveletek oszlop: szerkesztés ikon (mindig) + törlés ikon (ha nem elfogadott)
+  const editStroke = row.decision === 'accepted' ? '#A09688' : '#7A6F5E';
+  const actionsCell = `
+    <div class="pt-col-actions">
+      ${!isEditing ? `
+        <button class="action-btn" onclick="handleEdit(${idx})" title="Szerkesztés">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M9.5 2.5l2 2-7 7H2.5v-2l7-7z"
+              stroke="${editStroke}" stroke-width="1.4" stroke-linejoin="round"/>
+          </svg>
+        </button>` : ''}
+      ${row.decision !== 'accepted' && !isEditing ? `
+        <button class="action-btn" onclick="handleRemoveRow(${idx})" title="Eltávolítás">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 2l10 10M12 2L2 12"
+              stroke="#C0392B" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </button>` : ''}
+    </div>`;
+
+  return `<div class="${rowCls}" data-idx="${idx}">
+    <div class="pt-col-dot"><span class="${dotCls}"></span></div>
+    ${soforCell}${projektCell}${gepCell}${kezdesCell}${vegezCell}
+    ${decisionCell}${actionsCell}
+  </div>`;
+}
+
+// ─── Sorok renderelése ───────────────────────────────────────────────────────
+
+function renderRows() {
+  const container = document.getElementById('rowContainer');
+  if (rows.length === 0) {
+    container.innerHTML = `<div class="pt-empty">
+      Nincs tervezett sor. Kattints a "Javaslat generálása" gombra az előző nap tényei alapján.
+    </div>`;
+    document.getElementById('btnVegglegesit').disabled = true;
+    return;
+  }
+  container.innerHTML = rows.map((r, i) => buildRowHTML(r, i)).join('');
+  document.getElementById('btnVegglegesit').disabled = false;
+}
+
+// ─── Terv véglegesítése (DB-be írás) ────────────────────────────────────────
+
+async function finalizePlan() {
+  const pendingCount = rows.filter(r => r.decision === 'pending').length;
+  if (pendingCount > 0) {
+    const folytat = confirm(
+      `${pendingCount} sor még nincs jóváhagyva. Folytatja?\n` +
+      `A döntés nélküli sorok "javasolt" státusszal kerülnek mentésre.`
+    );
+    if (!folytat) return;
+  }
+
+  try {
+    for (const row of rows) {
+      // Elutasított sorokat nem írjuk be az adatbázisba
+      if (row.decision === 'rejected') continue;
+
+      const data = {
+        datum:      planDate,
+        sofor_id:   row.sofor_id,
+        projekt_id: row.projekt_id,
+        gep_id:     row.gep_id,
+        kezdes:     row.kezdes,
+        vegez:      row.vegez,
+        allapot:    row.allapot || 'javasolt',
+        forras:     row.forras  || 'auto',
+        megjegyzes: null,
+      };
+
+      if (row.id) {
+        // Meglévő rekord frissítése
+        await updateNapiTerv(row.id, data);
+      } else {
+        // Új rekord létrehozása, visszakapjuk az id-t
+        const newId = await createNapiTerv(data);
+        // createNapiTerv number-t ad vissza (lastInsertId), nem objektumot
+        row.id = typeof newId === 'object' ? newId?.id : newId;
+      }
+    }
+
+    // IndexedDB-be mentés (aszinkron — ez az egyetlen valódi await)
+    await saveToIndexedDB();
+    isFinalized = true;
+
+    // Vizuális visszajelzés — 3 másodpercig mutatja a sikert
+    const btn = document.getElementById('btnVegglegesit');
+    btn.textContent = '✓ Terv mentve!';
+    btn.disabled    = true;
+    setTimeout(() => {
+      btn.textContent = 'Terv véglegesítése';
+      btn.disabled    = false;
+    }, 3000);
+
+  } catch (e) {
+    console.error('[napi_tervezes] Véglegesítési hiba:', e);
+    alert('Hiba a mentés során: ' + e.message);
+  }
+}
+
+// ─── XSS-védő helper-ek ──────────────────────────────────────────────────────
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escAttr(str) {
+  return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ─── Inicializálás ───────────────────────────────────────────────────────────
+
+async function init() {
+  try {
+    await initDB();
+
+    // Alaptáblák párhuzamos betöltése
+    [allSoforok, allProjektek, allGepek] = await Promise.all([
+      Promise.resolve(getAllSoforok()),
+      Promise.resolve(getAllProjektek()),
+      Promise.resolve(getAllGepek()),
+    ]);
+
+    // Datalist feltöltése a gép autocomplete-hez
+    document.getElementById('gep-list').innerHTML =
+      allGepek
+        .map(g => `<option value="${escAttr([g.tipus, g.rendszam].filter(Boolean).join(' – '))}"></option>`)
+        .join('');
+
+    updateDatePill();
+    updateSummary();
+
+    // Ha már van mentett terv erre a napra, betöltjük
+    const hasExisting = await loadExistingPlan();
+    if (hasExisting) {
+      renderRows();
+      updateSummary();
+    } else {
+      renderRows(); // üres állapot megjelenítése
+    }
+
+  } catch (e) {
+    console.error('[napi_tervezes] init hiba:', e);
+    document.getElementById('appRoot').innerHTML =
+      `<div class="error-banner">Adatbázis hiba — töltsd újra az oldalt. (${escHtml(e.message)})</div>`;
+  }
+}
+
+// ─── Inicializálás indítása ───────────────────────────────────────────────────
+
+// Sidebar felhasználónév feltöltése
+document.getElementById('sidebarUserName').textContent = getIdentity().name;
+
+await init();
+
+// ─── Event listenererek (init után, mert az elemek már léteznek) ──────────────
+
+document.getElementById('btnPrevDay').onclick = () => {
+  planDate   = addDays(planDate,   -1);
+  sourceDate = addDays(sourceDate, -1);
+  editingIdx  = null;
+  isFinalized = false;
+  loadExistingPlan().then(has => {
+    if (!has) rows = [];
+    renderRows();
+    updateSummary();
+    updateDatePill();
+  });
+};
+
+document.getElementById('btnNextDay').onclick = () => {
+  planDate   = addDays(planDate,   +1);
+  sourceDate = addDays(sourceDate, +1);
+  editingIdx  = null;
+  isFinalized = false;
+  loadExistingPlan().then(has => {
+    if (!has) rows = [];
+    renderRows();
+    updateSummary();
+    updateDatePill();
+  });
+};
+
+document.getElementById('btnGenerate').onclick    = () => generatePlan();
+document.getElementById('btnSave').onclick        = () => finalizePlan();
+document.getElementById('btnVegglegesit').onclick = () => finalizePlan();
+</script>
+
+</body>
+</html>

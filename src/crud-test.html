@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRUD teszt — pilot-eroforras</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      background: #f5f5f5;
+      color: #222;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; border-bottom: 1px solid #ccc; padding-bottom: 0.2rem; }
+    pre {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.75rem 0; }
+    button {
+      padding: 0.45rem 1rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      background: #3b82f6;
+      color: #fff;
+      transition: background 0.15s;
+    }
+    button:hover { background: #2563eb; }
+    button.danger { background: #ef4444; }
+    button.danger:hover { background: #b91c1c; }
+    #status {
+      padding: 0.4rem 0.75rem;
+      border-radius: 5px;
+      font-size: 0.82rem;
+      margin-bottom: 0.5rem;
+    }
+    .ok  { background: #dcfce7; color: #166534; }
+    .err { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <h1>CRUD modul teszt — Iteráció 2</h1>
+  <p style="color:#555;font-size:0.85rem">Konzolt is nyisd meg (F12) a részletes logokért.</p>
+
+  <div id="status" class="ok">Inicializálás folyamatban...</div>
+
+  <div class="btn-row">
+    <button id="btn-seed">1. Adatok feltöltése (seed)</button>
+    <button id="btn-list">2. Összes adat listázása</button>
+    <button id="btn-update">3. Sofőr #1 frissítése</button>
+    <button id="btn-delete">4. Projekt #1 törlése</button>
+    <button id="btn-relist">5. Újralistázás + audit log</button>
+  </div>
+
+  <h2>Kimenet</h2>
+  <pre id="output">— még nincs kimenet —</pre>
+
+  <h2>Audit log (valtozas_log)</h2>
+  <pre id="audit">— még nincs audit log —</pre>
+
+  <script type="module">
+    import { initDB, saveToIndexedDB } from './db.js';
+    import {
+      createSofor, getAllSoforok, updateSofor,
+      createProjekt, getAllProjektek, deleteProjekt,
+      createGep, getAllGepek,
+      createNapiTeny, getNapiTenyByDatum,
+      createNapiTerv, getNapiTervByDatum,
+      getValtozasLog,
+    } from './crud.js';
+
+    // ── Állapot ──────────────────────────────────────────────────────────────
+    // Ezeket seed után töltjük fel, hogy az update/delete gombok használhassák
+    let sofor1Id = null;
+    let projekt1Id = null;
+
+    const statusEl = document.getElementById('status');
+    const outputEl = document.getElementById('output');
+    const auditEl  = document.getElementById('audit');
+
+    // ── Segédfüggvények ──────────────────────────────────────────────────────
+
+    function setStatus(msg, isErr = false) {
+      statusEl.textContent = msg;
+      statusEl.className   = isErr ? 'err' : 'ok';
+    }
+
+    function render(label, data) {
+      outputEl.textContent = label + '\n\n' + JSON.stringify(data, null, 2);
+    }
+
+    function renderAudit() {
+      const log = getValtozasLog();
+      auditEl.textContent = JSON.stringify(log, null, 2);
+    }
+
+    // ── Inicializálás ─────────────────────────────────────────────────────────
+    try {
+      await initDB();
+      setStatus('Adatbázis inicializálva. Kattints a gombokra a teszteléshez.');
+    } catch (err) {
+      setStatus('initDB hiba: ' + err.message, true);
+      console.error(err);
+    }
+
+    // ── 1. SEED ───────────────────────────────────────────────────────────────
+    document.getElementById('btn-seed').addEventListener('click', async () => {
+      try {
+        // 2 sofőr
+        sofor1Id = createSofor({
+          teljes_nev: 'Kovács János',
+          aliasok: 'Jani, KJ',
+          belepesi_datum: '2022-03-01',
+          statusz: 'aktiv',
+          megjegyzes: 'Éjszakai műszak preferált',
+        });
+        createSofor({
+          teljes_nev: 'Nagy Péter',
+          belepesi_datum: '2023-07-15',
+          statusz: 'aktiv',
+        });
+
+        // 2 projekt
+        projekt1Id = createProjekt({
+          munkaszam: 'M-2024-001',
+          helyszin: 'Budapest, Keleti pályaudvar',
+          megrendelo: 'MÁV Zrt.',
+          leiras: 'Teherszállítás vasúti munkálatok területére',
+        });
+        createProjekt({
+          munkaszam: 'M-2024-002',
+          helyszin: 'Miskolc, Ipari negyed',
+          megrendelo: 'ISD Dunaferr',
+        });
+
+        // 1 gép
+        createGep({
+          tipus: 'tehergépkocsi',
+          rendszam: 'ABC-123',
+          megjegyzes: '10 tonnás, utolsó szerviz: 2024-01',
+        });
+
+        // 1 napi_teny
+        createNapiTeny({
+          datum: '2024-03-15',
+          sofor_id: sofor1Id,
+          projekt_id: projekt1Id,
+          kezd_idopont: '2024-03-15 07:00',
+          befejezes_idopont: '2024-03-15 15:30',
+          munkaora: 8.5,
+          fuvarok_szama: 3,
+          allapot: 'rogzitett',
+          megjegyzes: 'Normál nap, késés nélkül',
+        });
+
+        // 1 napi_terv
+        createNapiTerv({
+          datum: '2024-03-16',
+          sofor_id: sofor1Id,
+          projekt_id: projekt1Id,
+          kezdes: '07:00',
+          vegez: '15:00',
+          allapot: 'javasolt',
+        });
+
+        await saveToIndexedDB();
+        setStatus('Adatok feltöltve (2 sofőr, 2 projekt, 1 gép, 1 napi_teny, 1 napi_terv). IndexedDB-be mentve.');
+        renderAudit();
+      } catch (err) {
+        setStatus('Seed hiba: ' + err.message, true);
+        console.error(err);
+      }
+    });
+
+    // ── 2. LISTA ──────────────────────────────────────────────────────────────
+    document.getElementById('btn-list').addEventListener('click', () => {
+      try {
+        const soforok   = getAllSoforok();
+        const projektek = getAllProjektek();
+        const gepek     = getAllGepek();
+        const teny      = getNapiTenyByDatum('2024-03-15');
+        const terv      = getNapiTervByDatum('2024-03-16');
+
+        render('--- Összes adat ---', { soforok, projektek, gepek, napi_teny_20240315: teny, napi_terv_20240316: terv });
+        renderAudit();
+        setStatus('Listázás kész.');
+      } catch (err) {
+        setStatus('Listázás hiba: ' + err.message, true);
+        console.error(err);
+      }
+    });
+
+    // ── 3. UPDATE ─────────────────────────────────────────────────────────────
+    document.getElementById('btn-update').addEventListener('click', async () => {
+      if (!sofor1Id) {
+        setStatus('Előbb töltsd fel az adatokat (1. gomb)!', true);
+        return;
+      }
+      try {
+        updateSofor(sofor1Id, {
+          aliasok: 'Jani, KJ, Kovács',
+          megjegyzes: 'Frissített megjegyzés — délutáni műszak is vállal',
+        });
+        await saveToIndexedDB();
+        setStatus(`Sofőr #${sofor1Id} frissítve. IndexedDB-be mentve.`);
+        renderAudit();
+      } catch (err) {
+        setStatus('Update hiba: ' + err.message, true);
+        console.error(err);
+      }
+    });
+
+    // ── 4. DELETE ─────────────────────────────────────────────────────────────
+    document.getElementById('btn-delete').addEventListener('click', async () => {
+      if (!projekt1Id) {
+        setStatus('Előbb töltsd fel az adatokat (1. gomb)!', true);
+        return;
+      }
+      try {
+        deleteProjekt(projekt1Id);
+        await saveToIndexedDB();
+        setStatus(`Projekt #${projekt1Id} (M-2024-001) törölve. IndexedDB-be mentve.`);
+        projekt1Id = null; // megakadályozzuk a dupla törlést
+        renderAudit();
+      } catch (err) {
+        setStatus('Törlés hiba: ' + err.message, true);
+        console.error(err);
+      }
+    });
+
+    // ── 5. ÚJRALISTÁZÁS ───────────────────────────────────────────────────────
+    document.getElementById('btn-relist').addEventListener('click', () => {
+      try {
+        const soforok   = getAllSoforok();
+        const projektek = getAllProjektek();
+        const gepek     = getAllGepek();
+
+        render('--- Aktuális állapot (update + delete után) ---', { soforok, projektek, gepek });
+        renderAudit();
+        setStatus('Újralistázás kész.');
+      } catch (err) {
+        setStatus('Újralistázás hiba: ' + err.message, true);
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

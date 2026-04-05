@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beállítások | Pilot Erőforrás</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared.css" />
+  <style>
+    /* ─── Settings lap layout ─────────────────────────────────────────────── */
+    .settings-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      background: #F5F4F1;
+    }
+
+    /* ─── Kártyák ─────────────────────────────────────────────────────────── */
+    .settings-card {
+      background: #FFFFFF;
+      border: 1px solid #E8E6E1;
+      border-radius: 10px;
+      max-width: 600px;
+    }
+
+    .settings-card__header {
+      padding: 24px;
+      border-bottom: 1px solid #E8E6E1;
+    }
+
+    .settings-card__title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1A1C1E;
+      margin: 0 0 6px;
+    }
+
+    .settings-card__desc {
+      font-size: 13px;
+      color: #7A6F5E;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .settings-card__body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .settings-card__footer {
+      padding: 16px 24px;
+      border-top: 1px solid #E8E6E1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* ─── Form mezők ──────────────────────────────────────────────────────── */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #7A6F5E;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .field-input,
+    .field-select {
+      height: 40px;
+      padding: 0 12px;
+      background: #F5F4F1;
+      border: 1px solid #E8E6E1;
+      border-radius: 6px;
+      font-family: 'Inter', system-ui;
+      font-size: 14px;
+      color: #1A1C1E;
+      width: 100%;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.12s;
+    }
+
+    .field-input:focus,
+    .field-select:focus {
+      border-color: #2D6A4F;
+    }
+
+    .field-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237A6F5E' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      cursor: pointer;
+    }
+
+    /* ─── Gombok ──────────────────────────────────────────────────────────── */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 16px;
+      background: #2D6A4F;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Inter', system-ui;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .btn-primary:hover {
+      background: #245C43;
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 14px;
+      background: #FFFFFF;
+      color: #3D3830;
+      border: 1px solid #E8E6E1;
+      border-radius: 6px;
+      font-family: 'Inter', system-ui;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+
+    .btn-secondary:hover {
+      background: #F5F4F1;
+      border-color: #C8C4BC;
+    }
+
+    .btn-destructive {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 14px;
+      background: #FFFFFF;
+      color: #C0392B;
+      border: 1px solid #C0392B;
+      border-radius: 6px;
+      font-family: 'Inter', system-ui;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .btn-destructive:hover {
+      background: #FDF5F4;
+    }
+
+    .btn-destructive-filled {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 16px;
+      background: #C0392B;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Inter', system-ui;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .btn-destructive-filled:hover {
+      background: #A93226;
+    }
+
+    /* ─── Mentés visszajelzés ─────────────────────────────────────────────── */
+    .save-feedback {
+      font-size: 13px;
+      font-weight: 500;
+      color: #2D6A4F;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .save-feedback--visible {
+      opacity: 1;
+    }
+
+    /* ─── Adatbázis műveletek sorok ───────────────────────────────────────── */
+    .db-action-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px;
+      gap: 16px;
+    }
+
+    .db-action-row + .db-action-row {
+      border-top: 1px solid #E8E6E1;
+    }
+
+    .db-action-label {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .db-action-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1A1C1E;
+    }
+
+    .db-action-sublabel {
+      font-size: 12px;
+      color: #7A6F5E;
+    }
+
+    /* ─── Visszajelzés üzenet az adatbázis műveletek után ────────────────── */
+    .db-feedback {
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 24px 16px;
+      display: none;
+    }
+
+    .db-feedback--success {
+      color: #2D6A4F;
+    }
+
+    .db-feedback--error {
+      color: #C0392B;
+    }
+
+    /* ─── Megerősítő modal ────────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 28, 30, 0.45);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal {
+      width: 440px;
+      background: #FFFFFF;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(26, 28, 30, 0.16);
+    }
+
+    .modal__body {
+      padding: 28px 28px 20px;
+    }
+
+    .modal__body h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1A1C1E;
+      margin: 0 0 10px;
+    }
+
+    .modal__body p {
+      font-size: 13px;
+      color: #7A6F5E;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .modal__footer {
+      padding: 16px 28px 24px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div>
+        <div class="brand-label">Pilot</div>
+        <div class="brand-name">Erőforrás</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- Dashboard -->
+      <a class="nav-item" href="./index.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        Dashboard
+      </a>
+      <!-- Sofőrök -->
+      <a class="nav-item" href="./soforok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Sofőrök
+      </a>
+      <!-- Projektek -->
+      <a class="nav-item" href="./projektek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Projektek
+      </a>
+      <!-- Gépek -->
+      <a class="nav-item" href="./gepek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="6" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M11 8h2.5l1 2.5V12h-3.5V8z" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="4" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+          <circle cx="11.5" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        Gépek
+      </a>
+      <div class="nav-divider"></div>
+      <!-- Napi rögzítés -->
+      <a class="nav-item" href="./napi_rogzites.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5.5 10.5l1.5 1.5 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Napi rögzítés
+      </a>
+      <!-- Napi tervezés -->
+      <a class="nav-item" href="./napi_tervezes.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 10h6M5 12.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Napi tervezés
+      </a>
+      <!-- Import / Export -->
+      <a class="nav-item" href="./import_export.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Import / Export
+      </a>
+      <!-- Beállítások — aktív -->
+      <a class="nav-item active" href="./settings.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        Beállítások
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user-info" id="sidebarUserInfo">
+        <!-- Feltöltve JS-ből az identity alapján -->
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <span id="sidebarUserName">—</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Fő tartalom ──────────────────────────────────────────────────────── -->
+  <div class="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="page-header-left">
+        <h1 class="page-title">Beállítások</h1>
+        <div class="page-subtitle">Rendszer és felhasználói beállítások</div>
+      </div>
+    </header>
+
+    <!-- Beállítások tartalom -->
+    <div class="settings-content">
+
+      <!-- ─── Kártya 1: Felhasználói azonosító ──────────────────────────────── -->
+      <div class="settings-card">
+        <div class="settings-card__header">
+          <h2 class="settings-card__title">Felhasználói azonosító</h2>
+          <p class="settings-card__desc">Az itt megadott név és szerepkör jelenik meg a változásnaplóban minden adatmódosításnál.</p>
+        </div>
+
+        <div class="settings-card__body">
+          <!-- Név mező -->
+          <div class="field-group">
+            <label class="field-label" for="inputNev">Név</label>
+            <input
+              class="field-input"
+              type="text"
+              id="inputNev"
+              placeholder="Pl. Kiss János"
+              autocomplete="off"
+            />
+          </div>
+
+          <!-- Szerepkör mező -->
+          <div class="field-group">
+            <label class="field-label" for="inputSzerepkor">Szerepkör</label>
+            <select class="field-select" id="inputSzerepkor">
+              <option value="Diszpécser">Diszpécser</option>
+              <option value="Admin">Admin</option>
+              <option value="Olvasó">Olvasó</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-card__footer">
+          <button class="btn-primary" id="btnSaveIdentity">Mentés</button>
+          <span class="save-feedback" id="saveFeedback">Mentve!</span>
+        </div>
+      </div>
+
+      <!-- ─── Kártya 2: Adatbázis kezelés ──────────────────────────────────── -->
+      <div class="settings-card">
+        <div class="settings-card__header">
+          <h2 class="settings-card__title">Adatbázis kezelés</h2>
+          <p class="settings-card__desc">Figyelem: az alábbi műveletek visszafordíthatatlanok.</p>
+        </div>
+
+        <!-- Sor 1: Visszaállítás -->
+        <div class="db-action-row">
+          <div class="db-action-label">
+            <span class="db-action-title">Adatbázis visszaállítása</span>
+            <span class="db-action-sublabel">Tölts fel egy korábban mentett .sqlite fájlt</span>
+          </div>
+          <button class="btn-secondary" id="btnImportDB">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 10V2M5 5l3-3 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            Feltöltés
+          </button>
+          <!-- Rejtett fájl input -->
+          <input type="file" id="fileInputDB" accept=".sqlite" style="display:none" />
+        </div>
+
+        <!-- Sor 2: Alaphelyzetbe állítás -->
+        <div class="db-action-row">
+          <div class="db-action-label">
+            <span class="db-action-title">Adatbázis alaphelyzetbe állítása</span>
+            <span class="db-action-sublabel">Minden adat törlése, séma megmarad</span>
+          </div>
+          <button class="btn-destructive" id="btnResetDB">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 3.5h10M5 3.5V2h4v1.5M5.5 6v4M8.5 6v4M3 3.5l.7 8h6.6l.7-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Törlés
+          </button>
+        </div>
+
+        <!-- Visszajelzés az adatbázis műveletek után -->
+        <div class="db-feedback" id="dbFeedback"></div>
+      </div>
+
+    </div><!-- /.settings-content -->
+
+  </div><!-- /.main-content -->
+</div><!-- /.app-layout -->
+
+<!-- ─── Megerősítő modal ───────────────────────────────────────────────────── -->
+<div id="resetModal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal__body">
+      <h2>Biztosan törli az összes adatot?</h2>
+      <p>Ez a művelet véglegesen törli az összes sofőr, projekt, gép, terv és tény rekordot. A séma megmarad. Ez a művelet nem visszavonható.</p>
+    </div>
+    <div class="modal__footer">
+      <button id="resetCancel" class="btn-secondary">Mégsem</button>
+      <button id="resetConfirm" class="btn-destructive-filled">Igen, törlöm</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initDB, saveToIndexedDB, importDB, getDB } from './db.js';
+  import { getIdentity, saveIdentity } from './identity.js';
+
+  // ─── Inicializálás ──────────────────────────────────────────────────────────
+
+  try {
+    await initDB();
+  } catch (err) {
+    console.error('[settings] initDB hiba:', err);
+  }
+
+  // Betöltjük a mentett azonosítót a form mezőkbe
+  function loadIdentityToForm() {
+    const identity = getIdentity();
+    document.getElementById('inputNev').value = identity.name === 'Ismeretlen' ? '' : identity.name;
+    document.getElementById('inputSzerepkor').value = identity.role;
+    document.getElementById('sidebarUserName').textContent = identity.name;
+  }
+
+  loadIdentityToForm();
+
+  // ─── Felhasználói azonosító mentése ─────────────────────────────────────────
+
+  document.getElementById('btnSaveIdentity').addEventListener('click', () => {
+    const name = document.getElementById('inputNev').value.trim();
+    const role = document.getElementById('inputSzerepkor').value;
+
+    // Üres névnél az 'Ismeretlen' alapértéket mentjük
+    saveIdentity(name || 'Ismeretlen', role);
+
+    // Sidebar frissítése
+    document.getElementById('sidebarUserName').textContent = name || 'Ismeretlen';
+
+    // "Mentve!" felirat megjelenítése, majd 2000ms után elhalványítás
+    const feedback = document.getElementById('saveFeedback');
+    feedback.classList.add('save-feedback--visible');
+    setTimeout(() => {
+      feedback.classList.remove('save-feedback--visible');
+    }, 2000);
+  });
+
+  // ─── Adatbázis visszaállítás (.sqlite feltöltés) ─────────────────────────────
+
+  document.getElementById('btnImportDB').addEventListener('click', () => {
+    document.getElementById('fileInputDB').click();
+  });
+
+  document.getElementById('fileInputDB').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Input visszaállítása, hogy ugyanazt a fájlt újra lehessen választani
+    e.target.value = '';
+
+    try {
+      await importDB(file);
+      await saveToIndexedDB();
+      showDbFeedback('Az adatbázis sikeresen visszaállítva.', 'success');
+    } catch (err) {
+      console.error('[settings] importDB hiba:', err);
+      showDbFeedback('Hiba a visszaállítás során: ' + err.message, 'error');
+    }
+  });
+
+  // ─── Adatbázis törlés (modal + megerősítés) ──────────────────────────────────
+
+  document.getElementById('btnResetDB').addEventListener('click', () => {
+    document.getElementById('resetModal').style.display = 'flex';
+  });
+
+  document.getElementById('resetCancel').addEventListener('click', () => {
+    document.getElementById('resetModal').style.display = 'none';
+  });
+
+  // Kattintás a háttérre is bezárja a modalt
+  document.getElementById('resetModal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      e.currentTarget.style.display = 'none';
+    }
+  });
+
+  document.getElementById('resetConfirm').addEventListener('click', async () => {
+    document.getElementById('resetModal').style.display = 'none';
+
+    try {
+      const db = getDB();
+      // FK sorrendben: gyermek táblák először, szülők utoljára
+      db.run('DELETE FROM valtozas_log');
+      db.run('DELETE FROM napi_teny');
+      db.run('DELETE FROM napi_terv');
+      db.run('DELETE FROM gep');
+      db.run('DELETE FROM projekt');
+      db.run('DELETE FROM sofor');
+      await saveToIndexedDB();
+      showDbFeedback('Adatbázis törölve.', 'success');
+    } catch (err) {
+      console.error('[settings] DB reset hiba:', err);
+      showDbFeedback('Hiba a törlés során: ' + err.message, 'error');
+    }
+  });
+
+  // ─── Visszajelzés segédfüggvény ─────────────────────────────────────────────
+
+  function showDbFeedback(message, type) {
+    const el = document.getElementById('dbFeedback');
+    el.textContent = message;
+    el.className = 'db-feedback db-feedback--' + type;
+    el.style.display = 'block';
+    // 4 másodperc után elrejtjük
+    setTimeout(() => {
+      el.style.display = 'none';
+    }, 4000);
+  }
+</script>
+</body>
+</html>
