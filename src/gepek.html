@@ -225,9 +225,7 @@
   </div><!-- /.main-content -->
 </div><!-- /.app-layout -->
 
-<datalist id="vallalkozo-list">
-  <option value="Zöld Út Fuvarozó és Szolgáltató Kft."></option>
-</datalist>
+<datalist id="vallalkozo-list"></datalist>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
 <script type="module">
   import { initDB, getDB, saveToIndexedDB } from './db.js';
@@ -285,6 +283,13 @@
     allGepek = getAllGepek();
     updateCounts();
     renderTable();
+    updateVallalkozoDatalist();
+  }
+
+  function updateVallalkozoDatalist() {
+    const vallalkozok = [...new Set(allGepek.map(g => g.vallalkozo).filter(Boolean))].sort();
+    document.getElementById('vallalkozo-list').innerHTML =
+      vallalkozok.map(v => `<option value="${v}"></option>`).join('');
   }
 
   function updateCounts() {
