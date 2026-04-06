@@ -402,10 +402,10 @@
         <div class="rt-header">
           <!-- Badge helyfoglaló -->
           <div class="rt-badge-slot"></div>
+          <div class="rt-col-projekt    rt-header-text">Munkaszám</div>
           <div class="rt-col-vallalkozo rt-header-text">Alvállalkozó</div>
-          <div class="rt-col-sofor   rt-header-text">Sofőr</div>
-          <div class="rt-col-projekt rt-header-text">Projekt / munkaszám</div>
-          <div class="rt-col-gep     rt-header-text">Gép</div>
+          <div class="rt-col-gep        rt-header-text">Eszköz</div>
+          <div class="rt-col-sofor      rt-header-text">Személy</div>
           <div class="rt-col-kezdes  rt-header-text" style="text-align:center;">Kezdés</div>
           <div class="rt-col-befejez rt-header-text" style="text-align:center;">Befejezés</div>
           <div class="rt-col-munkaora rt-header-text" style="text-align:center;">Óra</div>
@@ -597,7 +597,13 @@ function buildRowHTML(row, idx) {
   const vallalkozok = [...new Set(allGepek.map(g => g.vallalkozo).filter(Boolean))].sort();
 
   if (isEditing) {
-    // Vállalkozó select
+    // 1. Munkaszám
+    projektCell = `<div class="rt-col-projekt">
+      <input class="rt-input" id="inp_projekt_${idx}" value="${row.projekt_nev || ''}"
+        list="projekt-list" placeholder="Munkaszám…" autocomplete="off">
+    </div>`;
+
+    // 2. Alvállalkozó select
     const vallalkozoOptions = vallalkozok
       .map(v => `<option value="${v}"${v === (row.vallalkozo || '') ? ' selected' : ''}>${v}</option>`)
       .join('');
@@ -608,18 +614,16 @@ function buildRowHTML(row, idx) {
       </select>
     </div>`;
 
-    // Szerkesztési mód: inputok datalist autocomplete-tel
-    soforCell = `<div class="rt-col-sofor">
-      <input class="rt-input" id="inp_sofor_${idx}" value="${row.sofor_nev || ''}"
-        list="sofor-list" placeholder="Sofőr neve…" autocomplete="off">
-    </div>`;
-    projektCell = `<div class="rt-col-projekt">
-      <input class="rt-input" id="inp_projekt_${idx}" value="${row.projekt_nev || ''}"
-        list="projekt-list" placeholder="Munkaszám…" autocomplete="off">
-    </div>`;
+    // 3. Eszköz — alvállalkozóhoz szűrve
     gepCell = `<div class="rt-col-gep">
       <input class="rt-input" id="inp_gep_${idx}" value="${row.gep_nev || ''}"
-        list="gep-list" placeholder="Gép…" autocomplete="off">
+        list="gep-list" placeholder="Eszköz…" autocomplete="off">
+    </div>`;
+
+    // 4. Személy (sofőr)
+    soforCell = `<div class="rt-col-sofor">
+      <input class="rt-input" id="inp_sofor_${idx}" value="${row.sofor_nev || ''}"
+        list="sofor-list" placeholder="Személy neve…" autocomplete="off">
     </div>`;
     kezdesCell = `<div class="rt-col-kezdes">
       <input class="rt-input rt-input--time" id="inp_kezdes_${idx}" type="time"
@@ -644,11 +648,11 @@ function buildRowHTML(row, idx) {
         placeholder="Megjegyzés…">
     </div>`;
   } else {
-    // Olvasási mód: szöveges cellák
+    // Olvasási mód: szöveges cellák (sorrend: munkaszám, vállalkozó, eszköz, személy)
+    projektCell    = textCell('rt-col-projekt',    row.projekt_nev);
     vallalkozoCell = textCell('rt-col-vallalkozo', row.vallalkozo);
-    soforCell   = textCell('rt-col-sofor',    row.sofor_nev);
-    projektCell = textCell('rt-col-projekt',  row.projekt_nev);
-    gepCell     = textCell('rt-col-gep',      row.gep_nev);
+    gepCell        = textCell('rt-col-gep',        row.gep_nev);
+    soforCell      = textCell('rt-col-sofor',      row.sofor_nev);
     kezdesCell  = textCell('rt-col-kezdes',   row.kezd_idopont);
     befejezCell = textCell('rt-col-befejez',  row.befejezes_idopont);
     munkaCell   = textCell('rt-col-munkaora', row.munkaora != null ? row.munkaora : '—');
@@ -660,10 +664,10 @@ function buildRowHTML(row, idx) {
 
   return `<div class="${rowClass}" data-idx="${idx}">
     <div class="rt-badge-slot">${buildBadgeHTML(row.status, idx)}</div>
-    ${vallalkozoCell}
-    ${soforCell}
     ${projektCell}
+    ${vallalkozoCell}
     ${gepCell}
+    ${soforCell}
     ${kezdesCell}
     ${befejezCell}
     ${munkaCell}
@@ -728,7 +732,7 @@ window.handleEditRow = function(idx) {
   // handleVallalkozoChange frissíti a gep-list datalist-et az aktuális vállalkozóra
   setTimeout(() => {
     handleVallalkozoChange(idx);
-    document.getElementById('inp_sofor_' + idx)?.focus();
+    document.getElementById('inp_projekt_' + idx)?.focus();
   }, 50);
 };
 
@@ -992,7 +996,7 @@ function addNewRow() {
   editingIdx = rows.length - 1;
   renderRows();
   // Fókusz az első inputra (kis delay kell a DOM-hoz)
-  setTimeout(() => document.getElementById('inp_sofor_' + editingIdx)?.focus(), 50);
+  setTimeout(() => document.getElementById('inp_projekt_' + editingIdx)?.focus(), 50);
 }
 
 /**
