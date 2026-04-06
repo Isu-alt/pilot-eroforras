@@ -206,6 +206,37 @@ export function createSchema() {
     console.error('[db] createSchema hiba:', err);
     throw err;
   }
+
+  // Migrációk futtatása (meglévő adatbázis frissítése új oszlopokkal/táblákkal)
+  runMigrations();
+}
+
+/**
+ * runMigrations — Meglévő adatbázis séma frissítése új oszlopokkal.
+ * SQLite nem támogatja az ALTER TABLE ... ADD COLUMN IF NOT EXISTS szintaxist,
+ * ezért minden ALTER TABLE kísérletet try/catch blokkban futtatunk.
+ * Ha az oszlop már létezik, a hiba csendes (ignorált).
+ */
+function runMigrations() {
+  if (!db) return;
+
+  const migrations = [
+    // v2: beosztas oszlop a sofor táblához
+    `ALTER TABLE sofor ADD COLUMN beosztas TEXT NOT NULL DEFAULT 'sofor'`,
+  ];
+
+  for (const sql of migrations) {
+    try {
+      db.run(sql);
+    } catch (e) {
+      // "duplicate column name" vagy hasonló — az oszlop már létezik, kihagyjuk
+      if (!e.message?.includes('duplicate column')) {
+        console.warn('[db] Migráció kihagyva:', e.message);
+      }
+    }
+  }
+
+  console.log('[db] Migrációk lefuttatva.');
 }
 
 /**
