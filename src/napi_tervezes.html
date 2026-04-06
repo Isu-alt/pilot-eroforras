@@ -164,9 +164,10 @@
     .pt-status-dot--rejected { background: #C0392B; }
 
     /* ─── Oszlop flex ─────────────────────────────────────────────────────── */
-    .pt-col-sofor   { flex: 2.5; min-width: 0; }
-    .pt-col-projekt { flex: 2.5; min-width: 0; }
-    .pt-col-gep     { flex: 2.0; min-width: 0; }
+    .pt-col-vallalkozo { flex: 1.6; min-width: 0; }
+    .pt-col-sofor   { flex: 2.0; min-width: 0; }
+    .pt-col-projekt { flex: 2.0; min-width: 0; }
+    .pt-col-gep     { flex: 1.6; min-width: 0; }
     .pt-col-kezdes  { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
     .pt-col-befejez { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
     .pt-col-decision {
@@ -383,6 +384,15 @@
         </svg>
         Gépek
       </a>
+      <!-- Vállalkozók -->
+      <a class="nav-item" href="./vallalkozok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 9h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Vállalkozók
+      </a>
       <div class="nav-divider"></div>
       <!-- Napi rögzítés -->
       <a class="nav-item" href="./napi_rogzites.html">
@@ -503,14 +513,6 @@
     <!-- ─── Tervezés tartalom ──────────────────────────────────────────────── -->
     <div class="tervezes-content">
 
-      <!-- Alvállalkozó szűrő -->
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-        <label style="font-size:13px; font-weight:500; color:#7A6F5E; white-space:nowrap;">Alvállalkozó:</label>
-        <select id="filterVallalkozo" style="font-family:Inter,system-ui; font-size:14px; padding:6px 10px; border:1px solid #E8E6E1; border-radius:6px; background:#FAFAF8; color:#1A1C1E; cursor:pointer; min-width:260px;">
-          <option value="">— Összes —</option>
-        </select>
-      </div>
-
       <!-- Összefoglaló sáv -->
       <div class="summary-bar" id="summaryBar">
         <div class="summary-item">
@@ -540,6 +542,7 @@
         <div class="pt-header">
           <!-- Státusz dot helyfoglaló -->
           <div class="pt-col-dot"></div>
+          <div class="pt-col-vallalkozo pt-header-text">Alvállalkozó</div>
           <div class="pt-col-sofor   pt-header-text">Sofőr</div>
           <div class="pt-col-projekt pt-header-text">Projekt / munkaszám</div>
           <div class="pt-col-gep     pt-header-text">Gép</div>
@@ -682,6 +685,7 @@ async function generatePlan() {
       projekt_nev: projekt?.munkaszam || '',
       gep_id:      t.gep_id,
       gep_nev:     gepNev,
+      vallalkozo:  gep?.vallalkozo || null,
       kezdes:      t.kezd_idopont,
       vegez:       t.befejezes_idopont,
       allapot:     'javasolt',
@@ -727,6 +731,7 @@ async function loadExistingPlan() {
       projekt_nev: projekt?.munkaszam || '',
       gep_id:      t.gep_id,
       gep_nev:     gepNev,
+      vallalkozo:  gep?.vallalkozo || null,
       kezdes:      t.kezdes,
       vegez:       t.vegez,
       allapot:     t.allapot,
@@ -764,14 +769,36 @@ window.handleEdit = function(idx) {
   rows[idx].decision = 'modified'; // szerkesztés közben módosítottnak jelöljük
   renderRows();
   updateSummary();
-  // Fókusz az első input mezőre a render után
-  setTimeout(() => document.getElementById('pt_kezdes_' + idx)?.focus(), 50);
+  setTimeout(() => {
+    handleVallalkozoChange(idx);
+    document.getElementById('pt_vallalkozo_' + idx)?.focus();
+  }, 50);
+};
+
+window.handleVallalkozoChange = function(idx) {
+  const vallalkozo = document.getElementById('pt_vallalkozo_' + idx)?.value || '';
+  const szurtGepek = vallalkozo
+    ? allGepek.filter(g => g.vallalkozo === vallalkozo)
+    : allGepek;
+  document.getElementById('gep-list').innerHTML = szurtGepek
+    .map(g => `<option value="${escAttr([g.tipus, g.rendszam].filter(Boolean).join(' – '))}"></option>`)
+    .join('');
+  // Gep mező törlése ha már nem tartozik az új vállalkozóhoz
+  const gepInput = document.getElementById('pt_gep_' + idx);
+  if (gepInput && vallalkozo) {
+    const gepNev = gepInput.value;
+    const gepOk = szurtGepek.some(g =>
+      [g.tipus, g.rendszam].filter(Boolean).join(' – ') === gepNev
+    );
+    if (!gepOk) gepInput.value = '';
+  }
 };
 
 window.handleSaveEdit = function(idx) {
-  const kezdes = document.getElementById('pt_kezdes_' + idx)?.value || null;
-  const vegez  = document.getElementById('pt_vegez_' + idx)?.value  || null;
-  const gepNev = (document.getElementById('pt_gep_' + idx)?.value?.trim()) || rows[idx].gep_nev;
+  const kezdes     = document.getElementById('pt_kezdes_' + idx)?.value || null;
+  const vegez      = document.getElementById('pt_vegez_' + idx)?.value  || null;
+  const gepNev     = (document.getElementById('pt_gep_' + idx)?.value?.trim()) || rows[idx].gep_nev;
+  const vallalkozo = document.getElementById('pt_vallalkozo_' + idx)?.value || rows[idx].vallalkozo || null;
 
   // Megpróbáljuk azonosítani a gépet a névből (datalist autocomplete alapján)
   const gep = allGepek.find(g =>
@@ -785,12 +812,13 @@ window.handleSaveEdit = function(idx) {
     vegez  !== rows[idx].origVegez  ||
     gepNev !== rows[idx].origGepNev;
 
-  rows[idx].kezdes   = kezdes;
-  rows[idx].vegez    = vegez;
-  rows[idx].gep_id   = gep?.id ?? rows[idx].gep_id;
-  rows[idx].gep_nev  = gepNev;
-  rows[idx].decision = changed ? 'modified'   : 'accepted';
-  rows[idx].allapot  = changed ? 'modositott' : 'elfogadott';
+  rows[idx].kezdes     = kezdes;
+  rows[idx].vegez      = vegez;
+  rows[idx].gep_id     = gep?.id ?? rows[idx].gep_id;
+  rows[idx].gep_nev    = gepNev;
+  rows[idx].vallalkozo = vallalkozo;
+  rows[idx].decision   = changed ? 'modified'   : 'accepted';
+  rows[idx].allapot    = changed ? 'modositott' : 'elfogadott';
   editingIdx = null;
   renderRows();
   updateSummary();
@@ -840,6 +868,21 @@ function buildRowHTML(row, idx) {
     ? '<span class="warn-badge warn-badge--tavollet">Szabadságon</span>' : '';
   const kompetenciaBadge = (!gepOk)
     ? '<span class="warn-badge warn-badge--kompetencia">Nincs kompetencia</span>' : '';
+
+  // Vállalkozó cella
+  const vallalkozok = [...new Set(allGepek.map(g => g.vallalkozo).filter(Boolean))].sort();
+  const vallalkozoCell = isEditing
+    ? `<div class="pt-col-vallalkozo">
+        <select class="pt-input" id="pt_vallalkozo_${idx}" onchange="handleVallalkozoChange(${idx})">
+          <option value="">— Válassz —</option>
+          ${vallalkozok.map(v => `<option value="${escAttr(v)}"${v === (row.vallalkozo || '') ? ' selected' : ''}>${escHtml(v)}</option>`).join('')}
+        </select>
+       </div>`
+    : `<div class="pt-col-vallalkozo">
+        <span class="pt-cell-text${row.vallalkozo ? '' : ' pt-cell-text--muted'}">
+          ${escHtml(row.vallalkozo || '—')}
+        </span>
+       </div>`;
 
   const soforCell = `
     <div class="pt-col-sofor" style="display:flex; flex-wrap:wrap; align-items:center; gap:2px;">
@@ -969,7 +1012,7 @@ function buildRowHTML(row, idx) {
 
   return `<div class="${rowCls}" data-idx="${idx}">
     <div class="pt-col-dot"><span class="${dotCls}"></span></div>
-    ${soforCell}${projektCell}${gepCell}${kezdesCell}${vegezCell}
+    ${vallalkozoCell}${soforCell}${projektCell}${gepCell}${kezdesCell}${vegezCell}
     ${decisionCell}${actionsCell}
   </div>`;
 }
@@ -1062,27 +1105,6 @@ function escAttr(str) {
   return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-/** Alvállalkozó select feltöltése */
-function updateVallalkozoSelect() {
-  const sel = document.getElementById('filterVallalkozo');
-  const current = sel.value;
-  const vallalkozok = [...new Set(allGepek.map(g => g.vallalkozo).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">— Összes —</option>' +
-    vallalkozok.map(v => `<option value="${escAttr(v)}"${v === current ? ' selected' : ''}>${v}</option>`).join('');
-  if (vallalkozok.length === 1) sel.value = vallalkozok[0];
-}
-
-/** Gép datalist frissítése az aktuálisan kiválasztott vállalkozó alapján */
-function updateGepDatalist() {
-  const vallalkozo = document.getElementById('filterVallalkozo').value;
-  const szurtGepek = vallalkozo
-    ? allGepek.filter(g => g.vallalkozo === vallalkozo)
-    : allGepek;
-  document.getElementById('gep-list').innerHTML = szurtGepek
-    .map(g => `<option value="${escAttr([g.tipus, g.rendszam].filter(Boolean).join(' – '))}"></option>`)
-    .join('');
-}
-
 // ─── Inicializálás ───────────────────────────────────────────────────────────
 
 async function init() {
@@ -1096,10 +1118,10 @@ async function init() {
       Promise.resolve(getAllGepek()),
     ]);
 
-    // Alvállalkozó szűrő feltöltése
-    updateVallalkozoSelect();
-    // Datalist feltöltése a gép autocomplete-hez (szűrő alapján)
-    updateGepDatalist();
+    // Datalist feltöltése a gép autocomplete-hez (inicializáláskor mind)
+    document.getElementById('gep-list').innerHTML = allGepek
+      .map(g => `<option value="${escAttr([g.tipus, g.rendszam].filter(Boolean).join(' – '))}"></option>`)
+      .join('');
 
     // Aktív távollétek a tervezett napra
     aktivTavollet = getAktivTavollet(planDate);
@@ -1133,8 +1155,6 @@ document.getElementById('btnLogout').addEventListener('click', () => logout());
 await init();
 
 // ─── Event listenererek (init után, mert az elemek már léteznek) ──────────────
-
-document.getElementById('filterVallalkozo').onchange = () => updateGepDatalist();
 
 document.getElementById('btnPrevDay').onclick = () => {
   planDate   = addDays(planDate,   -1);

@@ -147,14 +147,15 @@
     .rt-badge--incomplete{ background: #F5DDD9; color: #C0392B; font-weight: 700; }
 
     /* ─── Oszlop szélességek ──────────────────────────────────────────────── */
-    .rt-col-sofor      { flex: 2.5; min-width: 0; }
-    .rt-col-projekt    { flex: 2.5; min-width: 0; }
-    .rt-col-gep        { flex: 1.8; min-width: 0; }
+    .rt-col-vallalkozo { flex: 1.6; min-width: 0; }
+    .rt-col-sofor      { flex: 2;   min-width: 0; }
+    .rt-col-projekt    { flex: 2;   min-width: 0; }
+    .rt-col-gep        { flex: 1.5; min-width: 0; }
     .rt-col-kezdes     { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
     .rt-col-befejez    { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
     .rt-col-munkaora   { width: 64px; min-width: 64px; flex-shrink: 0; text-align: center; }
     .rt-col-fuvarok    { width: 64px; min-width: 64px; flex-shrink: 0; text-align: center; }
-    .rt-col-megjegyzes { flex: 1.5; min-width: 0; }
+    .rt-col-megjegyzes { flex: 1.2; min-width: 0; }
     .rt-col-actions    { width: 32px; min-width: 32px; flex-shrink: 0; display: flex; justify-content: flex-end; }
 
     /* ─── Cellák ──────────────────────────────────────────────────────────── */
@@ -267,6 +268,15 @@
           <circle cx="11.5" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
         </svg>
         Gépek
+      </a>
+      <!-- Vállalkozók -->
+      <a class="nav-item" href="./vallalkozok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 9h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Vállalkozók
       </a>
       <div class="nav-divider"></div>
       <!-- Napi rögzítés — aktív -->
@@ -385,14 +395,6 @@
     <!-- ─── Rögzítés tartalom ─────────────────────────────────────────────── -->
     <div class="rogzites-content">
 
-      <!-- Alvállalkozó szűrő -->
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-        <label style="font-size:13px; font-weight:500; color:#7A6F5E; white-space:nowrap;">Alvállalkozó:</label>
-        <select id="filterVallalkozo" style="font-family:Inter,system-ui; font-size:14px; padding:6px 10px; border:1px solid #E8E6E1; border-radius:6px; background:#FAFAF8; color:#1A1C1E; cursor:pointer; min-width:260px;">
-          <option value="">— Összes —</option>
-        </select>
-      </div>
-
       <!-- Táblázat -->
       <div class="rogzites-table" id="rogzitesTable">
 
@@ -400,6 +402,7 @@
         <div class="rt-header">
           <!-- Badge helyfoglaló -->
           <div class="rt-badge-slot"></div>
+          <div class="rt-col-vallalkozo rt-header-text">Alvállalkozó</div>
           <div class="rt-col-sofor   rt-header-text">Sofőr</div>
           <div class="rt-col-projekt rt-header-text">Projekt / munkaszám</div>
           <div class="rt-col-gep     rt-header-text">Gép</div>
@@ -515,18 +518,7 @@ function updateProgress() {
   document.getElementById('progressFill').style.width = Math.round(pct * 120) + 'px';
 }
 
-/** Alvállalkozó select feltöltése az összes gépben szereplő egyedi vállalkozókkal */
-function updateVallalkozoSelect() {
-  const sel = document.getElementById('filterVallalkozo');
-  const current = sel.value;
-  const vallalkozok = [...new Set(allGepek.map(g => g.vallalkozo).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">— Összes —</option>' +
-    vallalkozok.map(v => `<option value="${v}"${v === current ? ' selected' : ''}>${v}</option>`).join('');
-  // Ha csak egy vállalkozó van, automatikusan válasszuk ki
-  if (vallalkozok.length === 1) sel.value = vallalkozok[0];
-}
-
-/** Datalist elemek frissítése — sofőr, projekt, gép (vállalkozó szűrővel) */
+/** Datalist elemek frissítése — sofőr, projekt, gép (inicializáláskor mind) */
 function updateDatalistOptions() {
   // Csak aktív sofőrök jelennek meg az autocomplete-ben
   const soforList = document.getElementById('sofor-list');
@@ -540,17 +532,8 @@ function updateDatalistOptions() {
     .map(p => `<option value="${p.munkaszam}"></option>`)
     .join('');
 
-  updateGepDatalist();
-}
-
-/** Gép datalist frissítése az aktuálisan kiválasztott vállalkozó alapján */
-function updateGepDatalist() {
-  const vallalkozo = document.getElementById('filterVallalkozo').value;
-  const szurtGepek = vallalkozo
-    ? allGepek.filter(g => g.vallalkozo === vallalkozo)
-    : allGepek;
-  const gepList = document.getElementById('gep-list');
-  gepList.innerHTML = szurtGepek
+  // Inicializáláskor az összes géppel töltjük fel a datalist-et
+  document.getElementById('gep-list').innerHTML = allGepek
     .map(g => `<option value="${[g.tipus, g.rendszam].filter(Boolean).join(' – ')}"></option>`)
     .join('');
 }
@@ -608,9 +591,23 @@ function buildRowHTML(row, idx) {
   const inputCell = (colClass, id, val, extra = '', attrs = '') =>
     `<div class="${colClass}"><input class="rt-input ${extra}" id="${id}_${idx}" value="${val != null ? val : ''}" ${attrs} autocomplete="off"></div>`;
 
-  let soforCell, projektCell, gepCell, kezdesCell, befejezCell, munkaCell, fuvarCell, megjCell;
+  let vallalkozoCell, soforCell, projektCell, gepCell, kezdesCell, befejezCell, munkaCell, fuvarCell, megjCell;
+
+  // Egyedi vállalkozók listája a selecthez
+  const vallalkozok = [...new Set(allGepek.map(g => g.vallalkozo).filter(Boolean))].sort();
 
   if (isEditing) {
+    // Vállalkozó select
+    const vallalkozoOptions = vallalkozok
+      .map(v => `<option value="${v}"${v === (row.vallalkozo || '') ? ' selected' : ''}>${v}</option>`)
+      .join('');
+    vallalkozoCell = `<div class="rt-col-vallalkozo">
+      <select class="rt-input" id="inp_vallalkozo_${idx}" onchange="handleVallalkozoChange(${idx})">
+        <option value="">— Válassz —</option>
+        ${vallalkozoOptions}
+      </select>
+    </div>`;
+
     // Szerkesztési mód: inputok datalist autocomplete-tel
     soforCell = `<div class="rt-col-sofor">
       <input class="rt-input" id="inp_sofor_${idx}" value="${row.sofor_nev || ''}"
@@ -648,6 +645,7 @@ function buildRowHTML(row, idx) {
     </div>`;
   } else {
     // Olvasási mód: szöveges cellák
+    vallalkozoCell = textCell('rt-col-vallalkozo', row.vallalkozo);
     soforCell   = textCell('rt-col-sofor',    row.sofor_nev);
     projektCell = textCell('rt-col-projekt',  row.projekt_nev);
     gepCell     = textCell('rt-col-gep',      row.gep_nev);
@@ -662,6 +660,7 @@ function buildRowHTML(row, idx) {
 
   return `<div class="${rowClass}" data-idx="${idx}">
     <div class="rt-badge-slot">${buildBadgeHTML(row.status, idx)}</div>
+    ${vallalkozoCell}
     ${soforCell}
     ${projektCell}
     ${gepCell}
@@ -700,6 +699,20 @@ window.refreshMunkaora = function(idx) {
 };
 
 /**
+ * Vállalkozó-váltáskor frissíti a gép datalist-et a kiválasztott vállalkozó alapján.
+ * Meghívódik a sor vállalkozó select onchange eseményén.
+ */
+window.handleVallalkozoChange = function(idx) {
+  const vallalkozo = document.getElementById('inp_vallalkozo_' + idx)?.value || '';
+  const szurtGepek = vallalkozo
+    ? allGepek.filter(g => g.vallalkozo === vallalkozo)
+    : allGepek;
+  document.getElementById('gep-list').innerHTML = szurtGepek
+    .map(g => `<option value="${[g.tipus, g.rendszam].filter(Boolean).join(' – ')}"></option>`)
+    .join('');
+};
+
+/**
  * Szerkesztési mód aktiválása egy adott sorra.
  * Ha másik sor épp szerkesztés alatt áll, azt előbb elmenti.
  */
@@ -712,7 +725,11 @@ window.handleEditRow = function(idx) {
   rows[idx].status = 'editing';
   renderRows();
   // Fókuszt az első inputra állítjuk (kis delay kell a DOM újraépítés miatt)
-  setTimeout(() => document.getElementById('inp_sofor_' + idx)?.focus(), 50);
+  // handleVallalkozoChange frissíti a gep-list datalist-et az aktuális vállalkozóra
+  setTimeout(() => {
+    handleVallalkozoChange(idx);
+    document.getElementById('inp_sofor_' + idx)?.focus();
+  }, 50);
 };
 
 /**
@@ -751,6 +768,7 @@ window.handleDeleteRow = async function(idx) {
  * @returns {object} Az összegyűjtött mezők
  */
 function readEditingRow(idx) {
+  const vallalkozo = document.getElementById('inp_vallalkozo_' + idx)?.value || null;
   const soforNev   = document.getElementById('inp_sofor_' + idx)?.value?.trim()      || '';
   const projektNev = document.getElementById('inp_projekt_' + idx)?.value?.trim()    || '';
   const gepNev     = document.getElementById('inp_gep_' + idx)?.value?.trim()        || '';
@@ -778,6 +796,7 @@ function readEditingRow(idx) {
     soforNev,
     projektNev,
     gepNev,
+    vallalkozo,
     sofor_id:            sofor?.id   || null,
     projekt_id:          projekt?.id || null,
     gep_id:              gep?.id     || null,
@@ -887,6 +906,8 @@ async function loadDayData() {
         projekt_nev:         projekt?.munkaszam || '',
         gep_id:              t.gep_id,
         gep_nev:             gep ? [gep.tipus, gep.rendszam].filter(Boolean).join(' – ') : '',
+        // Vállalkozót a gép objektumból deriváljuk (nem tárolódik a napi_teny-ben)
+        vallalkozo:          gep?.vallalkozo || null,
         kezd_idopont:        t.kezd_idopont,
         befejezes_idopont:   t.befejezes_idopont,
         munkaora:            t.munkaora,
@@ -898,7 +919,6 @@ async function loadDayData() {
     });
 
     editingIdx = null;
-    updateVallalkozoSelect();
     updateDatalistOptions();
     updateDatePill();
     renderRows();
@@ -925,9 +945,6 @@ try {
 }
 
 // ─── Event listener-ek ────────────────────────────────────────────────────────
-
-/** Alvállalkozó szűrő — frissíti a gép datalist-et */
-document.getElementById('filterVallalkozo').onchange = () => updateGepDatalist();
 
 /** Előző nap navigáció */
 document.getElementById('btnPrevDay').onclick = () => {
