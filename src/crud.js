@@ -318,19 +318,20 @@ export function deleteProjekt(id) {
 /**
  * createGep — Új gép rekord létrehozása.
  *
- * @param {{ tipus?: string, rendszam?: string, megjegyzes?: string }} data
+ * @param {{ tipus?: string, rendszam?: string, megjegyzes?: string, vallalkozo?: string }} data
  * @returns {number} Az új rekord id-ja
  */
 export function createGep(data) {
   try {
     const db = getDB();
     db.run(
-      `INSERT INTO gep (tipus, rendszam, megjegyzes)
-       VALUES (?, ?, ?)`,
+      `INSERT INTO gep (tipus, rendszam, megjegyzes, vallalkozo)
+       VALUES (?, ?, ?, ?)`,
       [
         data.tipus      ?? null,
         data.rendszam   ?? null,
         data.megjegyzes ?? null,
+        data.vallalkozo ?? null,
       ]
     );
     const id = lastInsertId();
@@ -390,12 +391,14 @@ export function updateGep(id, data) {
        SET tipus      = COALESCE(?, tipus),
            rendszam   = COALESCE(?, rendszam),
            megjegyzes = COALESCE(?, megjegyzes),
+           vallalkozo = COALESCE(?, vallalkozo),
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
       [
         data.tipus      ?? null,
         data.rendszam   ?? null,
         data.megjegyzes ?? null,
+        data.vallalkozo ?? null,
         id,
       ]
     );

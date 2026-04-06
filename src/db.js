@@ -102,12 +102,13 @@ export function createSchema() {
     db.run(`
       -- Gépek / járművek
       CREATE TABLE IF NOT EXISTS gep (
-        id         INTEGER PRIMARY KEY AUTOINCREMENT,
-        tipus      TEXT,                              -- pl. 'daru', 'tehergépkocsi'
-        rendszam   TEXT,
-        megjegyzes TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        tipus       TEXT,                              -- pl. 'daru', 'tehergépkocsi'
+        rendszam    TEXT,
+        megjegyzes  TEXT,
+        vallalkozo  TEXT,                              -- alvállalkozó neve
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at  TIMESTAMP
       );
     `);
 
@@ -223,6 +224,10 @@ function runMigrations() {
   const migrations = [
     // v2: beosztas oszlop a sofor táblához
     `ALTER TABLE sofor ADD COLUMN beosztas TEXT NOT NULL DEFAULT 'sofor'`,
+    // v3: allapot oszlop a gep táblához (gepek.html inline ALTER helyett itt kezeljük)
+    `ALTER TABLE gep ADD COLUMN allapot TEXT DEFAULT 'elerheto'`,
+    // v4: vallalkozo oszlop a gep táblához
+    `ALTER TABLE gep ADD COLUMN vallalkozo TEXT`,
   ];
 
   for (const sql of migrations) {
@@ -234,6 +239,16 @@ function runMigrations() {
         console.warn('[db] Migráció kihagyva:', e.message);
       }
     }
+  }
+
+  // Alapértelmezett alvállalkozó beállítása azon gépekre, ahol még nincs megadva
+  try {
+    db.run(
+      `UPDATE gep SET vallalkozo = 'Zöld Út Fuvarozó és Szolgáltató Kft.'
+       WHERE vallalkozo IS NULL OR vallalkozo = ''`
+    );
+  } catch (e) {
+    console.warn('[db] Alvállalkozó alapértelmezés hiba:', e.message);
   }
 
   console.log('[db] Migrációk lefuttatva.');

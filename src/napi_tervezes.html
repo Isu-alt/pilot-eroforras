@@ -503,6 +503,14 @@
     <!-- ─── Tervezés tartalom ──────────────────────────────────────────────── -->
     <div class="tervezes-content">
 
+      <!-- Alvállalkozó szűrő -->
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+        <label style="font-size:13px; font-weight:500; color:#7A6F5E; white-space:nowrap;">Alvállalkozó:</label>
+        <select id="filterVallalkozo" style="font-family:Inter,system-ui; font-size:14px; padding:6px 10px; border:1px solid #E8E6E1; border-radius:6px; background:#FAFAF8; color:#1A1C1E; cursor:pointer; min-width:260px;">
+          <option value="">— Összes —</option>
+        </select>
+      </div>
+
       <!-- Összefoglaló sáv -->
       <div class="summary-bar" id="summaryBar">
         <div class="summary-item">
@@ -1054,6 +1062,27 @@ function escAttr(str) {
   return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/** Alvállalkozó select feltöltése */
+function updateVallalkozoSelect() {
+  const sel = document.getElementById('filterVallalkozo');
+  const current = sel.value;
+  const vallalkozok = [...new Set(allGepek.map(g => g.vallalkozo).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">— Összes —</option>' +
+    vallalkozok.map(v => `<option value="${escAttr(v)}"${v === current ? ' selected' : ''}>${v}</option>`).join('');
+  if (vallalkozok.length === 1) sel.value = vallalkozok[0];
+}
+
+/** Gép datalist frissítése az aktuálisan kiválasztott vállalkozó alapján */
+function updateGepDatalist() {
+  const vallalkozo = document.getElementById('filterVallalkozo').value;
+  const szurtGepek = vallalkozo
+    ? allGepek.filter(g => g.vallalkozo === vallalkozo)
+    : allGepek;
+  document.getElementById('gep-list').innerHTML = szurtGepek
+    .map(g => `<option value="${escAttr([g.tipus, g.rendszam].filter(Boolean).join(' – '))}"></option>`)
+    .join('');
+}
+
 // ─── Inicializálás ───────────────────────────────────────────────────────────
 
 async function init() {
@@ -1067,11 +1096,10 @@ async function init() {
       Promise.resolve(getAllGepek()),
     ]);
 
-    // Datalist feltöltése a gép autocomplete-hez
-    document.getElementById('gep-list').innerHTML =
-      allGepek
-        .map(g => `<option value="${escAttr([g.tipus, g.rendszam].filter(Boolean).join(' – '))}"></option>`)
-        .join('');
+    // Alvállalkozó szűrő feltöltése
+    updateVallalkozoSelect();
+    // Datalist feltöltése a gép autocomplete-hez (szűrő alapján)
+    updateGepDatalist();
 
     // Aktív távollétek a tervezett napra
     aktivTavollet = getAktivTavollet(planDate);
@@ -1105,6 +1133,8 @@ document.getElementById('btnLogout').addEventListener('click', () => logout());
 await init();
 
 // ─── Event listenererek (init után, mert az elemek már léteznek) ──────────────
+
+document.getElementById('filterVallalkozo').onchange = () => updateGepDatalist();
 
 document.getElementById('btnPrevDay').onclick = () => {
   planDate   = addDays(planDate,   -1);

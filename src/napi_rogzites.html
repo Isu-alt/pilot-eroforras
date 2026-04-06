@@ -385,6 +385,14 @@
     <!-- ─── Rögzítés tartalom ─────────────────────────────────────────────── -->
     <div class="rogzites-content">
 
+      <!-- Alvállalkozó szűrő -->
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+        <label style="font-size:13px; font-weight:500; color:#7A6F5E; white-space:nowrap;">Alvállalkozó:</label>
+        <select id="filterVallalkozo" style="font-family:Inter,system-ui; font-size:14px; padding:6px 10px; border:1px solid #E8E6E1; border-radius:6px; background:#FAFAF8; color:#1A1C1E; cursor:pointer; min-width:260px;">
+          <option value="">— Összes —</option>
+        </select>
+      </div>
+
       <!-- Táblázat -->
       <div class="rogzites-table" id="rogzitesTable">
 
@@ -507,7 +515,18 @@ function updateProgress() {
   document.getElementById('progressFill').style.width = Math.round(pct * 120) + 'px';
 }
 
-/** Datalist elemek frissítése — sofőr, projekt, gép */
+/** Alvállalkozó select feltöltése az összes gépben szereplő egyedi vállalkozókkal */
+function updateVallalkozoSelect() {
+  const sel = document.getElementById('filterVallalkozo');
+  const current = sel.value;
+  const vallalkozok = [...new Set(allGepek.map(g => g.vallalkozo).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">— Összes —</option>' +
+    vallalkozok.map(v => `<option value="${v}"${v === current ? ' selected' : ''}>${v}</option>`).join('');
+  // Ha csak egy vállalkozó van, automatikusan válasszuk ki
+  if (vallalkozok.length === 1) sel.value = vallalkozok[0];
+}
+
+/** Datalist elemek frissítése — sofőr, projekt, gép (vállalkozó szűrővel) */
 function updateDatalistOptions() {
   // Csak aktív sofőrök jelennek meg az autocomplete-ben
   const soforList = document.getElementById('sofor-list');
@@ -521,8 +540,17 @@ function updateDatalistOptions() {
     .map(p => `<option value="${p.munkaszam}"></option>`)
     .join('');
 
+  updateGepDatalist();
+}
+
+/** Gép datalist frissítése az aktuálisan kiválasztott vállalkozó alapján */
+function updateGepDatalist() {
+  const vallalkozo = document.getElementById('filterVallalkozo').value;
+  const szurtGepek = vallalkozo
+    ? allGepek.filter(g => g.vallalkozo === vallalkozo)
+    : allGepek;
   const gepList = document.getElementById('gep-list');
-  gepList.innerHTML = allGepek
+  gepList.innerHTML = szurtGepek
     .map(g => `<option value="${[g.tipus, g.rendszam].filter(Boolean).join(' – ')}"></option>`)
     .join('');
 }
@@ -870,6 +898,7 @@ async function loadDayData() {
     });
 
     editingIdx = null;
+    updateVallalkozoSelect();
     updateDatalistOptions();
     updateDatePill();
     renderRows();
@@ -896,6 +925,9 @@ try {
 }
 
 // ─── Event listener-ek ────────────────────────────────────────────────────────
+
+/** Alvállalkozó szűrő — frissíti a gép datalist-et */
+document.getElementById('filterVallalkozo').onchange = () => updateGepDatalist();
 
 /** Előző nap navigáció */
 document.getElementById('btnPrevDay').onclick = () => {

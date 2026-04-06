@@ -170,7 +170,7 @@
           <div style="width:48px; flex-shrink:0;"></div>
           <div style="flex:2; min-width:0;">Típus / Megnevezés</div>
           <div style="width:140px; flex-shrink:0;">Rendszám</div>
-          <div style="flex:2; min-width:0;">Megjegyzés</div>
+          <div style="flex:2; min-width:0;">Alvállalkozó</div>
           <div style="width:110px; flex-shrink:0;">Állapot</div>
           <div style="width:80px; flex-shrink:0;"></div>
         </div>
@@ -198,6 +198,10 @@
             <input class="form-input" type="text" id="inputRendszam" placeholder="pl. ABC-123" style="font-family:'Courier New',monospace; letter-spacing:0.05em;" />
           </div>
           <div class="form-field">
+            <label class="form-label" for="inputVallalkozo">Alvállalkozó <span style="color:var(--color-error)">*</span></label>
+            <input class="form-input" type="text" id="inputVallalkozo" placeholder="pl. Zöld Út Fuvarozó és Szolgáltató Kft." list="vallalkozo-list" />
+          </div>
+          <div class="form-field">
             <label class="form-label" for="inputMegjegyzes">Megjegyzés</label>
             <input class="form-input" type="text" id="inputMegjegyzes" placeholder="Opcionális megjegyzés" />
           </div>
@@ -221,6 +225,9 @@
   </div><!-- /.main-content -->
 </div><!-- /.app-layout -->
 
+<datalist id="vallalkozo-list">
+  <option value="Zöld Út Fuvarozó és Szolgáltató Kft."></option>
+</datalist>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
 <script type="module">
   import { initDB, getDB, saveToIndexedDB } from './db.js';
@@ -373,7 +380,7 @@
           ${escHtml(gep.rendszam || '—')}
         </div>
         <div style="flex:2; min-width:0; color:var(--color-text-secondary); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-          ${escHtml(gep.megjegyzes || '—')}
+          ${escHtml(gep.vallalkozo || '—')}
         </div>
         <div style="width:110px; flex-shrink:0;">
           <span class="${badgeClass}">${badgeText}</span>
@@ -400,12 +407,13 @@
 
   function openNewForm() {
     editingId = null;
-    document.getElementById('formTitle').textContent   = 'Új gép';
-    document.getElementById('inputTipus').value        = '';
-    document.getElementById('inputRendszam').value     = '';
-    document.getElementById('inputMegjegyzes').value   = '';
-    document.getElementById('inputAllapot').value      = 'elerheto';
-    document.getElementById('formPanel').style.display = 'flex';
+    document.getElementById('formTitle').textContent     = 'Új gép';
+    document.getElementById('inputTipus').value          = '';
+    document.getElementById('inputRendszam').value       = '';
+    document.getElementById('inputVallalkozo').value     = 'Zöld Út Fuvarozó és Szolgáltató Kft.';
+    document.getElementById('inputMegjegyzes').value     = '';
+    document.getElementById('inputAllapot').value        = 'elerheto';
+    document.getElementById('formPanel').style.display   = 'flex';
     document.getElementById('inputTipus').focus();
   }
 
@@ -414,12 +422,13 @@
     if (!gep) return;
 
     editingId = id;
-    document.getElementById('formTitle').textContent   = 'Szerkesztés';
-    document.getElementById('inputTipus').value        = gep.tipus      || '';
-    document.getElementById('inputRendszam').value     = gep.rendszam   || '';
-    document.getElementById('inputMegjegyzes').value   = gep.megjegyzes || '';
-    document.getElementById('inputAllapot').value      = gep.allapot    || 'elerheto';
-    document.getElementById('formPanel').style.display = 'flex';
+    document.getElementById('formTitle').textContent     = 'Szerkesztés';
+    document.getElementById('inputTipus').value          = gep.tipus      || '';
+    document.getElementById('inputRendszam').value       = gep.rendszam   || '';
+    document.getElementById('inputVallalkozo').value     = gep.vallalkozo || '';
+    document.getElementById('inputMegjegyzes').value     = gep.megjegyzes || '';
+    document.getElementById('inputAllapot').value        = gep.allapot    || 'elerheto';
+    document.getElementById('formPanel').style.display   = 'flex';
     document.getElementById('inputTipus').focus();
   }
 
@@ -442,25 +451,26 @@
 
     const allapot    = document.getElementById('inputAllapot').value;
     const rendszam   = document.getElementById('inputRendszam').value.trim() || null;
+    const vallalkozo = document.getElementById('inputVallalkozo').value.trim() || null;
     const megjegyzes = document.getElementById('inputMegjegyzes').value.trim() || null;
 
     try {
       if (editingId !== null) {
-        // Alap mezők frissítése a crud.js-sel
         updateGep(editingId, {
           tipus:      tipus,
           rendszam:   rendszam,
+          vallalkozo: vallalkozo,
           megjegyzes: megjegyzes,
+          allapot:    allapot,
         });
-        // Állapot frissítése közvetlen SQL-lel (extra oszlop)
         getDB().run('UPDATE gep SET allapot = ? WHERE id = ?', [allapot, editingId]);
       } else {
         const newId = createGep({
           tipus:      tipus,
           rendszam:   rendszam,
+          vallalkozo: vallalkozo,
           megjegyzes: megjegyzes,
         });
-        // Állapot beállítása az új rekordra
         getDB().run('UPDATE gep SET allapot = ? WHERE id = ?', [allapot, newId]);
       }
       await saveToIndexedDB();
