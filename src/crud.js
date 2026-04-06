@@ -313,25 +313,99 @@ export function deleteProjekt(id) {
   }
 }
 
+// ─── gep_csoport tábla ───────────────────────────────────────────────────────
+
+/**
+ * createGepCsoport — Új gépcsoport rekord létrehozása.
+ *
+ * @param {string} nev
+ * @returns {number} Az új rekord id-ja
+ */
+export function createGepCsoport(nev) {
+  try {
+    const db = getDB();
+    db.run(`INSERT INTO gep_csoport (nev) VALUES (?)`, [nev]);
+    const id = lastInsertId();
+    logChange('gep_csoport', id, 'INSERT', `Új gépcsoport létrehozva: ${nev}`);
+    return id;
+  } catch (err) {
+    console.error('[crud] createGepCsoport hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * getAllGepCsoport — Az összes gépcsoport lekérése, névsorban.
+ *
+ * @returns {Object[]}
+ */
+export function getAllGepCsoport() {
+  try {
+    const result = getDB().exec(`SELECT * FROM gep_csoport ORDER BY nev`);
+    return rowsToObjects(result);
+  } catch (err) {
+    console.error('[crud] getAllGepCsoport hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * updateGepCsoport — Gépcsoport nevének frissítése.
+ *
+ * @param {number} id
+ * @param {string} nev
+ */
+export function updateGepCsoport(id, nev) {
+  try {
+    getDB().run(
+      `UPDATE gep_csoport SET nev = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [nev, id]
+    );
+    logChange('gep_csoport', id, 'UPDATE', `Gépcsoport frissítve (id=${id}): ${nev}`);
+  } catch (err) {
+    console.error('[crud] updateGepCsoport hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * deleteGepCsoport — Gépcsoport törlése.
+ * A csoporthoz tartozó gépek csoport_id mezőjét NULL-ra állítja törlés előtt.
+ *
+ * @param {number} id
+ */
+export function deleteGepCsoport(id) {
+  try {
+    // Először nullázzuk a gép rekordjait
+    getDB().run(`UPDATE gep SET csoport_id = NULL WHERE csoport_id = ?`, [id]);
+    getDB().run(`DELETE FROM gep_csoport WHERE id = ?`, [id]);
+    logChange('gep_csoport', id, 'DELETE', `Gépcsoport törölve (id=${id})`);
+  } catch (err) {
+    console.error('[crud] deleteGepCsoport hiba:', err);
+    throw err;
+  }
+}
+
 // ─── gep tábla ───────────────────────────────────────────────────────────────
 
 /**
  * createGep — Új gép rekord létrehozása.
  *
- * @param {{ tipus?: string, rendszam?: string, megjegyzes?: string, vallalkozo?: string }} data
+ * @param {{ tipus?: string, rendszam?: string, megjegyzes?: string, vallalkozo?: string, csoport_id?: number|null }} data
  * @returns {number} Az új rekord id-ja
  */
 export function createGep(data) {
   try {
     const db = getDB();
     db.run(
-      `INSERT INTO gep (tipus, rendszam, megjegyzes, vallalkozo)
-       VALUES (?, ?, ?, ?)`,
+      `INSERT INTO gep (tipus, rendszam, megjegyzes, vallalkozo, csoport_id)
+       VALUES (?, ?, ?, ?, ?)`,
       [
         data.tipus      ?? null,
         data.rendszam   ?? null,
         data.megjegyzes ?? null,
         data.vallalkozo ?? null,
+        data.csoport_id ?? null,
       ]
     );
     const id = lastInsertId();
@@ -380,6 +454,10 @@ export function getGepById(id) {
 /**
  * updateGep — Gép rekord frissítése.
  *
+ * Megjegyzés: csoport_id nem COALESCE-vel van kezelve, mert azt NULL-ra is
+ * szeretnénk állítani (csoport eltávolítása). Az érték `undefined` esetén
+ * NULL-t küldünk — a hívó fél felelőssége, hogy mindig explicit értéket adjon.
+ *
  * @param {number} id
  * @param {Object} data
  */
@@ -392,6 +470,7 @@ export function updateGep(id, data) {
            rendszam   = COALESCE(?, rendszam),
            megjegyzes = COALESCE(?, megjegyzes),
            vallalkozo = COALESCE(?, vallalkozo),
+           csoport_id = ?,
            updated_at = CURRENT_TIMESTAMP
        WHERE id = ?`,
       [
@@ -399,6 +478,7 @@ export function updateGep(id, data) {
         data.rendszam   ?? null,
         data.megjegyzes ?? null,
         data.vallalkozo ?? null,
+        data.csoport_id !== undefined ? data.csoport_id : null,
         id,
       ]
     );

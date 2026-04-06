@@ -66,6 +66,13 @@
         </svg>
         Vállalkozók
       </a>
+      <!-- Eszközcsoportok -->
+      <a class="nav-item" href="./gep_csoportok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Eszközcsoportok
+      </a>
       <div class="nav-divider"></div>
       <!-- Napi rögzítés -->
       <a class="nav-item" href="./napi_rogzites.html">
@@ -211,6 +218,12 @@
             <input class="form-input" type="text" id="inputVallalkozo" placeholder="pl. Zöld Út Fuvarozó és Szolgáltató Kft." list="vallalkozo-list" />
           </div>
           <div class="form-field">
+            <label class="form-label" for="inputCsoport">Csoport</label>
+            <select class="form-select" id="inputCsoport">
+              <option value="">— Nincs megadva —</option>
+            </select>
+          </div>
+          <div class="form-field">
             <label class="form-label" for="inputMegjegyzes">Megjegyzés</label>
             <input class="form-input" type="text" id="inputMegjegyzes" placeholder="Opcionális megjegyzés" />
           </div>
@@ -238,7 +251,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
 <script type="module">
   import { initDB, getDB, saveToIndexedDB } from './db.js';
-  import { createGep, getAllGepek, updateGep, deleteGep } from './crud.js';
+  import { createGep, getAllGepek, updateGep, deleteGep, getAllGepCsoport } from './crud.js';
   import { getIdentity } from './identity.js';
   import { requireAuth, logout, isAdmin } from './auth.js';
 
@@ -256,6 +269,7 @@
   let currentFilter = 'all';  // 'all' | 'elerheto' | 'szerviz' | 'kivont'
   let editingId     = null;
   let allGepek      = [];
+  let allCsoportok  = [];
   let filterText    = '';
 
   // ─── Inicializálás ──────────────────────────────────────────────────────────
@@ -275,6 +289,7 @@
       // Oszlop már létezik — normális eset újratöltésnél
     }
 
+    allCsoportok = getAllGepCsoport();
     await loadAndRender();
     // Szerkesztési gombok elrejtése nem-admin felhasználóknak
     if (!isAdmin()) {
@@ -289,10 +304,20 @@
   // ─── Adatbetöltés ───────────────────────────────────────────────────────────
 
   async function loadAndRender() {
-    allGepek = getAllGepek();
+    allGepek     = getAllGepek();
+    allCsoportok = getAllGepCsoport();
     updateCounts();
     renderTable();
     updateVallalkozoDatalist();
+    refreshCsoportSelect();
+  }
+
+  function refreshCsoportSelect() {
+    const sel     = document.getElementById('inputCsoport');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Nincs megadva —</option>' +
+      allCsoportok.map(c => `<option value="${c.id}">${escHtml(c.nev)}</option>`).join('');
+    sel.value = current;
   }
 
   function updateVallalkozoDatalist() {
@@ -379,6 +404,8 @@
       <circle cx="11.5" cy="12" r="1.2" stroke="${strokeColor}" stroke-width="1.2"/>
     </svg>`;
 
+    const csoport = allCsoportok.find(c => c.id === gep.csoport_id);
+
     return `
       <div class="${rowClass}" data-id="${gep.id}">
         <div style="width:48px; flex-shrink:0; display:flex; align-items:center;">
@@ -389,6 +416,7 @@
             ${escHtml(gep.tipus || '—')}
           </div>
           ${gep.rendszam ? `<div style="font-size:11px; color:var(--color-text-muted); font-family:'Courier New',monospace; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(gep.rendszam)}</div>` : ''}
+          ${csoport ? `<div style="font-size:11px; color:var(--color-text-muted); margin-top:2px;">${escHtml(csoport.nev)}</div>` : ''}
         </div>
         <div style="width:140px; flex-shrink:0; font-family:'Courier New',monospace; font-size:12px; color:var(--color-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
           ${escHtml(gep.rendszam || '—')}
@@ -425,6 +453,7 @@
     document.getElementById('inputTipus').value          = '';
     document.getElementById('inputRendszam').value       = '';
     document.getElementById('inputVallalkozo').value     = 'Zöld Út Fuvarozó és Szolgáltató Kft.';
+    document.getElementById('inputCsoport').value        = '';
     document.getElementById('inputMegjegyzes').value     = '';
     document.getElementById('inputAllapot').value        = 'elerheto';
     document.getElementById('formPanel').style.display   = 'flex';
@@ -440,6 +469,7 @@
     document.getElementById('inputTipus').value          = gep.tipus      || '';
     document.getElementById('inputRendszam').value       = gep.rendszam   || '';
     document.getElementById('inputVallalkozo').value     = gep.vallalkozo || '';
+    document.getElementById('inputCsoport').value        = gep.csoport_id || '';
     document.getElementById('inputMegjegyzes').value     = gep.megjegyzes || '';
     document.getElementById('inputAllapot').value        = gep.allapot    || 'elerheto';
     document.getElementById('formPanel').style.display   = 'flex';
@@ -463,10 +493,12 @@
       return;
     }
 
-    const allapot    = document.getElementById('inputAllapot').value;
-    const rendszam   = document.getElementById('inputRendszam').value.trim() || null;
-    const vallalkozo = document.getElementById('inputVallalkozo').value.trim() || null;
-    const megjegyzes = document.getElementById('inputMegjegyzes').value.trim() || null;
+    const allapotVal  = document.getElementById('inputAllapot').value;
+    const rendszam    = document.getElementById('inputRendszam').value.trim() || null;
+    const vallalkozo  = document.getElementById('inputVallalkozo').value.trim() || null;
+    const megjegyzes  = document.getElementById('inputMegjegyzes').value.trim() || null;
+    const csoportRaw  = document.getElementById('inputCsoport').value;
+    const csoport_id  = csoportRaw ? parseInt(csoportRaw, 10) : null;
 
     try {
       if (editingId !== null) {
@@ -475,17 +507,19 @@
           rendszam:   rendszam,
           vallalkozo: vallalkozo,
           megjegyzes: megjegyzes,
-          allapot:    allapot,
+          csoport_id: csoport_id,
+          allapot:    allapotVal,
         });
-        getDB().run('UPDATE gep SET allapot = ? WHERE id = ?', [allapot, editingId]);
+        getDB().run('UPDATE gep SET allapot = ? WHERE id = ?', [allapotVal, editingId]);
       } else {
         const newId = createGep({
           tipus:      tipus,
           rendszam:   rendszam,
           vallalkozo: vallalkozo,
           megjegyzes: megjegyzes,
+          csoport_id: csoport_id,
         });
-        getDB().run('UPDATE gep SET allapot = ? WHERE id = ?', [allapot, newId]);
+        getDB().run('UPDATE gep SET allapot = ? WHERE id = ?', [allapotVal, newId]);
       }
       await saveToIndexedDB();
       closeForm();

@@ -100,6 +100,16 @@ export function createSchema() {
     `);
 
     db.run(`
+      -- Eszközcsoportok (gép kategóriák)
+      CREATE TABLE IF NOT EXISTS gep_csoport (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        nev        TEXT NOT NULL UNIQUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP
+      );
+    `);
+
+    db.run(`
       -- Gépek / járművek
       CREATE TABLE IF NOT EXISTS gep (
         id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -107,6 +117,7 @@ export function createSchema() {
         rendszam    TEXT,
         megjegyzes  TEXT,
         vallalkozo  TEXT,                              -- alvállalkozó neve
+        csoport_id  INTEGER REFERENCES gep_csoport(id),
         created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at  TIMESTAMP
       );
@@ -228,6 +239,8 @@ function runMigrations() {
     `ALTER TABLE gep ADD COLUMN allapot TEXT DEFAULT 'elerheto'`,
     // v4: vallalkozo oszlop a gep táblához
     `ALTER TABLE gep ADD COLUMN vallalkozo TEXT`,
+    // v5: csoport_id oszlop a gep táblához
+    `ALTER TABLE gep ADD COLUMN csoport_id INTEGER REFERENCES gep_csoport(id)`,
   ];
 
   for (const sql of migrations) {

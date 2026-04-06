@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vállalkozók | Pilot Erőforrás</title>
+  <title>Eszközcsoportok | Pilot Erőforrás</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./shared.css" />
 </head>
@@ -21,6 +21,7 @@
     </div>
 
     <nav class="sidebar-nav">
+      <!-- Dashboard -->
       <a class="nav-item" href="./index.html">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
@@ -30,6 +31,7 @@
         </svg>
         Dashboard
       </a>
+      <!-- Sofőrök -->
       <a class="nav-item" href="./soforok.html">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
@@ -37,6 +39,7 @@
         </svg>
         Sofőrök
       </a>
+      <!-- Projektek -->
       <a class="nav-item" href="./projektek.html">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/>
@@ -44,6 +47,7 @@
         </svg>
         Projektek
       </a>
+      <!-- Gépek -->
       <a class="nav-item" href="./gepek.html">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="1" y="6" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
@@ -53,8 +57,8 @@
         </svg>
         Gépek
       </a>
-      <!-- Vállalkozók — aktív -->
-      <a class="nav-item active" href="./vallalkozok.html">
+      <!-- Vállalkozók -->
+      <a class="nav-item" href="./vallalkozok.html">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
           <path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.3"/>
@@ -62,14 +66,15 @@
         </svg>
         Vállalkozók
       </a>
-      <!-- Eszközcsoportok -->
-      <a class="nav-item" href="./gep_csoportok.html">
+      <!-- Eszközcsoportok — aktív -->
+      <a class="nav-item active" href="./gep_csoportok.html">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
         </svg>
         Eszközcsoportok
       </a>
       <div class="nav-divider"></div>
+      <!-- Napi rögzítés -->
       <a class="nav-item" href="./napi_rogzites.html">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
@@ -79,6 +84,7 @@
         </svg>
         Napi rögzítés
       </a>
+      <!-- Napi tervezés -->
       <a class="nav-item" href="./napi_tervezes.html">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
@@ -88,6 +94,7 @@
         </svg>
         Napi tervezés
       </a>
+      <!-- Távollétek -->
       <a class="nav-item" href="./tavolletek.html">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
@@ -97,6 +104,7 @@
         </svg>
         Távollétek
       </a>
+      <!-- Import / Export -->
       <a class="nav-item" href="./import_export.html">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -104,6 +112,7 @@
         </svg>
         Import / Export
       </a>
+      <!-- Beállítások -->
       <a class="nav-item" href="./settings.html">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/>
@@ -111,6 +120,7 @@
         </svg>
         Beállítások
       </a>
+      <!-- Admin panel (csak adminoknak látható) -->
       <div id="navAdminItem" style="display:none">
         <a class="nav-item" href="./admin.html">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -121,7 +131,7 @@
 
     <div class="sidebar-footer">
       <div class="sidebar-user-info" id="sidebarUserInfo">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/>
           <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
         </svg>
@@ -137,22 +147,25 @@
   <!-- ─── Fő tartalom ──────────────────────────────────────────────────────── -->
   <div class="main-content">
 
+    <!-- Page Header -->
     <header class="page-header">
       <div class="page-header-left">
-        <h1 class="page-title">Vállalkozók</h1>
+        <h1 class="page-title">Eszközcsoportok</h1>
         <div class="page-subtitle"><span id="subtitle">Betöltés...</span></div>
       </div>
       <div class="page-header-right">
-        <button class="btn-primary" id="btnNew">+ Új vállalkozó</button>
+        <button class="btn-primary" id="btnNew">+ Új csoport</button>
       </div>
     </header>
 
+    <!-- Tartalomterület -->
     <div class="content-area">
 
       <!-- Táblázat -->
       <div class="table-container" id="tableContainer">
         <div class="table-header-row">
-          <div style="flex:1; min-width:0;">Cégnév</div>
+          <div style="flex:2; min-width:0;">Csoport neve</div>
+          <div style="width:120px; flex-shrink:0;">Gépek száma</div>
           <div style="width:80px; flex-shrink:0;"></div>
         </div>
         <div id="tableBody"></div>
@@ -161,18 +174,18 @@
       <!-- Form panel -->
       <div class="form-panel" id="formPanel" style="display:none;">
         <div class="form-panel-header">
-          <span class="form-panel-title" id="formTitle">Új vállalkozó</span>
+          <span class="form-panel-title" id="formTitle">Új csoport</span>
           <button class="action-btn" id="btnPanelClose" title="Bezárás">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
           </button>
         </div>
         <div class="form-panel-body">
           <div class="form-field">
-            <label class="form-label" for="inputNev">Cégnév <span style="color:var(--color-error)">*</span></label>
-            <input class="form-input" type="text" id="inputNev" placeholder="pl. Zöld Út Fuvarozó és Szolgáltató Kft." />
-            <span class="form-error" id="errorNev">A cégnév megadása kötelező.</span>
+            <label class="form-label" for="inputNev">Csoport neve <span style="color:var(--color-error)">*</span></label>
+            <input class="form-input" type="text" id="inputNev" placeholder="pl. 4 tengelyes" />
+            <span class="form-error" id="errorNev">A csoport neve kötelező.</span>
           </div>
         </div>
         <div class="form-panel-footer">
@@ -182,20 +195,22 @@
       </div>
 
     </div><!-- /.content-area -->
+
   </div><!-- /.main-content -->
 </div><!-- /.app-layout -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
 <script type="module">
-  import { initDB, getDB, saveToIndexedDB } from './db.js';
+  import { initDB, saveToIndexedDB } from './db.js';
+  import { createGepCsoport, getAllGepCsoport, updateGepCsoport, deleteGepCsoport, getAllGepek } from './crud.js';
   import { requireAuth, logout, isAdmin } from './auth.js';
 
-  const session = requireAuth();
+  const session = requireAuth('admin');
 
   // ─── Állapot ────────────────────────────────────────────────────────────────
 
-  let editingNev = null; // szerkesztett cégnév (eredeti), null = új
-  let allVallalkozok = [];
+  let editingId    = null;
+  let allCsoportok = [];
 
   // ─── Inicializálás ──────────────────────────────────────────────────────────
 
@@ -205,80 +220,114 @@
 
   try {
     await initDB();
-    loadAndRender();
-    if (!isAdmin()) document.getElementById('btnNew').style.display = 'none';
+    await seedDefaultCsoportok();
+    await loadAndRender();
   } catch (err) {
     document.querySelector('.content-area').innerHTML =
       '<div class="error-banner">Adatbázis hiba — töltsd újra az oldalt</div>';
+    console.error('[gep_csoportok] initDB hiba:', err);
+  }
+
+  // ─── Alapértelmezett csoportok seed ─────────────────────────────────────────
+
+  async function seedDefaultCsoportok() {
+    const meglevo = getAllGepCsoport();
+    if (meglevo.length > 0) return;
+
+    const defaults = [
+      '4 tengelyes',
+      '3 tengelyes',
+      'Kombikotró',
+      'Dózer',
+      'Daru',
+    ];
+
+    for (const nev of defaults) {
+      try {
+        createGepCsoport(nev);
+      } catch (err) {
+        console.warn('[gep_csoportok] Seed hiba:', nev, err.message);
+      }
+    }
+
+    await saveToIndexedDB();
+    console.log('[gep_csoportok] Alapértelmezett csoportok létrehozva.');
   }
 
   // ─── Adatbetöltés ───────────────────────────────────────────────────────────
 
-  function loadAndRender() {
-    // Az egyedi vállalkozó neveket a gep táblából olvassuk ki
-    const result = getDB().exec(
-      `SELECT DISTINCT vallalkozo FROM gep WHERE vallalkozo IS NOT NULL AND vallalkozo != '' ORDER BY vallalkozo`
-    );
-    allVallalkozok = (result[0]?.values || []).map(r => r[0]);
-    document.getElementById('subtitle').textContent = `${allVallalkozok.length} vállalkozó összesen`;
+  async function loadAndRender() {
+    allCsoportok = getAllGepCsoport();
+    document.getElementById('subtitle').textContent = `${allCsoportok.length} csoport összesen`;
     renderTable();
   }
 
   function renderTable() {
-    const tbody = document.getElementById('tableBody');
-    if (allVallalkozok.length === 0) {
-      tbody.innerHTML = '<div class="table-empty">Nincs rögzített vállalkozó. Adj hozzá egyet a gépek oldalon, vagy kattints az "+ Új vállalkozó" gombra.</div>';
+    const tbody   = document.getElementById('tableBody');
+    const allGepek = getAllGepek();
+
+    if (allCsoportok.length === 0) {
+      tbody.innerHTML = '<div class="table-empty">Nincs megjeleníthető csoport.</div>';
       return;
     }
-    tbody.innerHTML = allVallalkozok.map(nev => `
-      <div class="table-row" data-nev="${escHtml(nev)}">
-        <div style="flex:1; min-width:0;">
-          <div style="font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(nev)}</div>
-          <div style="font-size:12px; color:var(--color-text-muted); margin-top:2px;">${gepSzam(nev)} gép kapcsolódik</div>
-        </div>
-        <div style="width:80px; flex-shrink:0; display:flex; align-items:center; justify-content:flex-end; gap:4px;">
-          ${isAdmin() ? `
-          <button class="action-btn action-btn--edit" title="Átnevezés" onclick="handleEdit('${escAttr(nev)}')">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M9.5 2.5l2 2L4 12H2v-2l7.5-7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
-            </svg>
-          </button>
-          <button class="action-btn action-btn--delete" title="Törlés" onclick="handleDelete('${escAttr(nev)}')">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M2 3.5h10M5 3.5V2h4v1.5M5.5 6v4M8.5 6v4M3 3.5l.7 8h6.6l.7-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>` : ''}
-        </div>
-      </div>
-    `).join('');
-  }
 
-  function gepSzam(nev) {
-    const r = getDB().exec(`SELECT COUNT(*) FROM gep WHERE vallalkozo = ?`, [nev]);
-    return r[0]?.values[0]?.[0] ?? 0;
+    tbody.innerHTML = allCsoportok.map(c => {
+      const gepSzam = allGepek.filter(g => g.csoport_id === c.id).length;
+      return `
+        <div class="table-row" data-id="${c.id}">
+          <div style="flex:2; min-width:0;">
+            <div style="font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              ${escHtml(c.nev)}
+            </div>
+          </div>
+          <div style="width:120px; flex-shrink:0; color:var(--color-text-secondary); font-size:13px;">
+            ${gepSzam} gép
+          </div>
+          <div style="width:80px; flex-shrink:0; display:flex; align-items:center; justify-content:flex-end; gap:4px;">
+            <button class="action-btn action-btn--edit" title="Szerkesztés" onclick="handleEdit(${c.id})">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.5 2.5l2 2L4 12H2v-2l7.5-7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button class="action-btn action-btn--delete" title="Törlés" onclick="handleDelete(${c.id})">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 3.5h10M5 3.5V2h4v1.5M5.5 6v4M8.5 6v4M3 3.5l.7 8h6.6l.7-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   // ─── Form kezelés ────────────────────────────────────────────────────────────
 
   function openNewForm() {
-    editingNev = null;
-    document.getElementById('formTitle').textContent   = 'Új vállalkozó';
+    editingId = null;
+    document.getElementById('formTitle').textContent   = 'Új csoport';
     document.getElementById('inputNev').value          = '';
+    document.getElementById('errorNev').classList.remove('visible');
+    document.getElementById('inputNev').style.borderColor = '';
     document.getElementById('formPanel').style.display = 'flex';
     document.getElementById('inputNev').focus();
   }
 
-  function openEditForm(nev) {
-    editingNev = nev;
-    document.getElementById('formTitle').textContent   = 'Átnevezés';
-    document.getElementById('inputNev').value          = nev;
+  function openEditForm(id) {
+    const csoport = allCsoportok.find(c => c.id === id);
+    if (!csoport) return;
+
+    editingId = id;
+    document.getElementById('formTitle').textContent   = 'Szerkesztés';
+    document.getElementById('inputNev').value          = csoport.nev;
+    document.getElementById('errorNev').classList.remove('visible');
+    document.getElementById('inputNev').style.borderColor = '';
     document.getElementById('formPanel').style.display = 'flex';
     document.getElementById('inputNev').focus();
   }
 
   function closeForm() {
     document.getElementById('formPanel').style.display = 'none';
-    editingNev = null;
+    editingId = null;
   }
 
   // ─── Mentés ──────────────────────────────────────────────────────────────────
@@ -286,53 +335,53 @@
   async function handleSave() {
     const nev = document.getElementById('inputNev').value.trim();
     if (!nev) {
-      document.getElementById('inputNev').style.borderColor = 'var(--color-error)';
+      const input = document.getElementById('inputNev');
+      input.focus();
+      input.style.borderColor = 'var(--color-error)';
       document.getElementById('errorNev').classList.add('visible');
       return;
     }
 
     try {
-      if (editingNev !== null) {
-        // Átnevezés: UPDATE minden gép rekordot ahol a régi nevet használták
-        getDB().run(
-          `UPDATE gep SET vallalkozo = ?, updated_at = CURRENT_TIMESTAMP WHERE vallalkozo = ?`,
-          [nev, editingNev]
-        );
+      if (editingId !== null) {
+        updateGepCsoport(editingId, nev);
       } else {
-        // Új vállalkozó: csak akkor adjuk hozzá ha nincs ilyen, és legalább egy géphez rendeljük
-        if (allVallalkozok.includes(nev)) {
-          alert('Ez a vállalkozó már szerepel az adatbázisban.');
-          return;
-        }
-        // Üres vállalkozónál nem hozunk létre rekordot — a gépekhez rendelés a Gépek oldalon történik
-        alert('Az új vállalkozó mentve. Rendelje hozzá gépekhez a Gépek oldalon.');
-        // A nevet eltároljuk a gep táblában úgy, hogy egy temp sort hozunk létre?
-        // Nem — inkább csak jelezzük, hogy ezt a Gépek oldalon kell elvégezni.
-        closeForm();
-        return;
+        createGepCsoport(nev);
       }
       await saveToIndexedDB();
       closeForm();
-      loadAndRender();
+      await loadAndRender();
     } catch (err) {
-      alert('Hiba: ' + err.message);
+      // UNIQUE constraint violation: a név már foglalt
+      if (err.message?.includes('UNIQUE') || err.message?.includes('unique')) {
+        alert('Ez a csoport neve már létezik. Kérjük, adjon meg egyedi nevet.');
+      } else {
+        alert('Hiba a mentés során: ' + err.message);
+      }
     }
   }
 
   // ─── Törlés ──────────────────────────────────────────────────────────────────
 
-  async function handleDelete(nev) {
-    const db = getDB();
-    const gepek = db.exec(`SELECT COUNT(*) FROM gep WHERE vallalkozo = ?`, [nev]);
-    const szam = gepek[0]?.values[0]?.[0] ?? 0;
-    const msg = szam > 0
-      ? `A "${nev}" vállalkozóhoz ${szam} gép kapcsolódik. Törlés esetén a gépek vállalkozó mező ürül. Folytatja?`
-      : `Biztosan törli: "${nev}"?`;
-    if (!confirm(msg)) return;
+  async function handleDelete(id) {
+    const csoport  = allCsoportok.find(c => c.id === id);
+    if (!csoport) return;
+
+    const allGepek = getAllGepek();
+    const gepSzam  = allGepek.filter(g => g.csoport_id === id).length;
+
+    let uzenet = `Biztosan törli a(z) "${csoport.nev}" csoportot?`;
+    if (gepSzam > 0) {
+      uzenet += `\n\nFigyelem: ${gepSzam} gép tartozik ehhez a csoporthoz. A törlés után ezek a gépek csoport nélkül maradnak.`;
+    }
+
+    if (!confirm(uzenet)) return;
+
     try {
-      db.run(`UPDATE gep SET vallalkozo = NULL WHERE vallalkozo = ?`, [nev]);
+      deleteGepCsoport(id);
       await saveToIndexedDB();
-      loadAndRender();
+      if (editingId === id) closeForm();
+      await loadAndRender();
     } catch (err) {
       alert('Törlési hiba: ' + err.message);
     }
@@ -340,8 +389,8 @@
 
   // ─── Globális handlerek ──────────────────────────────────────────────────────
 
-  window.handleEdit   = (nev) => openEditForm(nev);
-  window.handleDelete = (nev) => handleDelete(nev);
+  window.handleEdit   = (id) => openEditForm(id);
+  window.handleDelete = (id) => handleDelete(id);
 
   // ─── Eseménykezelők ──────────────────────────────────────────────────────────
 
@@ -355,16 +404,14 @@
     document.getElementById('errorNev').classList.remove('visible');
   };
 
-  // ─── Segédfüggvények ─────────────────────────────────────────────────────────
+  // ─── Segédfüggvény ───────────────────────────────────────────────────────────
 
   function escHtml(str) {
     return String(str)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function escAttr(str) {
-    return String(str).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 </script>
 </body>
