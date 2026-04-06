@@ -79,6 +79,7 @@ export function createSchema() {
         aliasok        TEXT,                          -- vesszővel elválasztott becénevek/rövidítések
         belepesi_datum DATE,
         statusz        TEXT    DEFAULT 'aktiv',       -- aktiv | inaktiv
+        beosztas       TEXT    NOT NULL DEFAULT 'sofor', -- sofor | gepkezelo | sofor_es_gepkezelo
         megjegyzes     TEXT,
         created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at     TIMESTAMP
@@ -158,6 +159,31 @@ export function createSchema() {
         felhasznalo TEXT    DEFAULT 'rendszer',
         idopont     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         leiras      TEXT                              -- emberi olvasható leírás
+      );
+    `);
+
+    db.run(`
+      -- Távollét tervezés (szabadság, betegség, egyéb távollétek)
+      CREATE TABLE IF NOT EXISTS tavollet (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        sofor_id    INTEGER NOT NULL REFERENCES sofor(id),
+        datum_tol   DATE    NOT NULL,
+        datum_ig    DATE    NOT NULL,
+        tipus       TEXT    NOT NULL DEFAULT 'szabadsag', -- szabadsag | betegseg | egyeb
+        megjegyzes  TEXT,
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at  TIMESTAMP
+      );
+    `);
+
+    db.run(`
+      -- Kompetencia mátrix (sofőr ↔ gép jogosultságok)
+      CREATE TABLE IF NOT EXISTS kompetencia (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        sofor_id  INTEGER NOT NULL REFERENCES sofor(id),
+        gep_id    INTEGER NOT NULL REFERENCES gep(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(sofor_id, gep_id)
       );
     `);
 

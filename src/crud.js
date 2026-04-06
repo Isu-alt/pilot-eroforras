@@ -88,21 +88,22 @@ function lastInsertId() {
 /**
  * createSofor — Új sofőr rekord létrehozása.
  *
- * @param {{ teljes_nev: string, aliasok?: string, belepesi_datum?: string, statusz?: string, megjegyzes?: string }} data
+ * @param {{ teljes_nev: string, aliasok?: string, belepesi_datum?: string, statusz?: string, beosztas?: string, megjegyzes?: string }} data
  * @returns {number} Az új rekord id-ja
  */
 export function createSofor(data) {
   try {
     const db = getDB();
     db.run(
-      `INSERT INTO sofor (teljes_nev, aliasok, belepesi_datum, statusz, megjegyzes)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO sofor (teljes_nev, aliasok, belepesi_datum, statusz, beosztas, megjegyzes)
+       VALUES (?, ?, ?, ?, ?, ?)`,
       [
         data.teljes_nev,
-        data.aliasok    ?? null,
+        data.aliasok        ?? null,
         data.belepesi_datum ?? null,
-        data.statusz    ?? 'aktiv',
-        data.megjegyzes ?? null,
+        data.statusz        ?? 'aktiv',
+        data.beosztas       ?? 'sofor',
+        data.megjegyzes     ?? null,
       ]
     );
     const id = lastInsertId();
@@ -163,6 +164,7 @@ export function updateSofor(id, data) {
            aliasok        = COALESCE(?, aliasok),
            belepesi_datum = COALESCE(?, belepesi_datum),
            statusz        = COALESCE(?, statusz),
+           beosztas       = COALESCE(?, beosztas),
            megjegyzes     = COALESCE(?, megjegyzes),
            updated_at     = CURRENT_TIMESTAMP
        WHERE id = ?`,
@@ -171,6 +173,7 @@ export function updateSofor(id, data) {
         data.aliasok        ?? null,
         data.belepesi_datum ?? null,
         data.statusz        ?? null,
+        data.beosztas       ?? null,
         data.megjegyzes     ?? null,
         id,
       ]
@@ -701,6 +704,256 @@ export function getValtozasLog() {
     return rowsToObjects(result);
   } catch (err) {
     console.error('[crud] getValtozasLog hiba:', err);
+    throw err;
+  }
+}
+
+// ─── tavollet tábla ──────────────────────────────────────────────────────────
+
+/**
+ * createTavollet — Új távollét rekord létrehozása.
+ *
+ * @param {{ sofor_id: number, datum_tol: string, datum_ig: string, tipus?: string, megjegyzes?: string }} data
+ * @returns {number} Az új rekord id-ja
+ */
+export function createTavollet(data) {
+  try {
+    const db = getDB();
+    db.run(
+      `INSERT INTO tavollet (sofor_id, datum_tol, datum_ig, tipus, megjegyzes)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        data.sofor_id,
+        data.datum_tol,
+        data.datum_ig,
+        data.tipus      ?? 'szabadsag',
+        data.megjegyzes ?? null,
+      ]
+    );
+    const id = lastInsertId();
+    logChange('tavollet', id, 'INSERT',
+      `Új távollét létrehozva: sofor_id=${data.sofor_id}, ${data.datum_tol} – ${data.datum_ig}`);
+    return id;
+  } catch (err) {
+    console.error('[crud] createTavollet hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * getAllTavollet — Az összes távollét rekord lekérése, legújabb elöl.
+ *
+ * @returns {Object[]}
+ */
+export function getAllTavollet() {
+  try {
+    const db = getDB();
+    const result = db.exec('SELECT * FROM tavollet ORDER BY created_at DESC');
+    return rowsToObjects(result);
+  } catch (err) {
+    console.error('[crud] getAllTavollet hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * getTavolletBySofor — Egy sofőr összes távollét rekordjának lekérése.
+ *
+ * @param {number} sofor_id
+ * @returns {Object[]}
+ */
+export function getTavolletBySofor(sofor_id) {
+  try {
+    const db = getDB();
+    const result = db.exec(
+      'SELECT * FROM tavollet WHERE sofor_id = ? ORDER BY datum_tol DESC',
+      [sofor_id]
+    );
+    return rowsToObjects(result);
+  } catch (err) {
+    console.error('[crud] getTavolletBySofor hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * updateTavollet — Távollét rekord frissítése.
+ *
+ * @param {number} id
+ * @param {Object} data
+ */
+export function updateTavollet(id, data) {
+  try {
+    const db = getDB();
+    db.run(
+      `UPDATE tavollet
+       SET sofor_id   = COALESCE(?, sofor_id),
+           datum_tol  = COALESCE(?, datum_tol),
+           datum_ig   = COALESCE(?, datum_ig),
+           tipus      = COALESCE(?, tipus),
+           megjegyzes = COALESCE(?, megjegyzes),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [
+        data.sofor_id   ?? null,
+        data.datum_tol  ?? null,
+        data.datum_ig   ?? null,
+        data.tipus      ?? null,
+        data.megjegyzes ?? null,
+        id,
+      ]
+    );
+    logChange('tavollet', id, 'UPDATE', `Távollét frissítve (id=${id}): ${JSON.stringify(data)}`);
+  } catch (err) {
+    console.error('[crud] updateTavollet hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * deleteTavollet — Távollét rekord törlése.
+ *
+ * @param {number} id
+ */
+export function deleteTavollet(id) {
+  try {
+    const db = getDB();
+    db.run('DELETE FROM tavollet WHERE id = ?', [id]);
+    logChange('tavollet', id, 'DELETE', `Távollét törölve (id=${id})`);
+  } catch (err) {
+    console.error('[crud] deleteTavollet hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * getAktivTavollet — Azon sofőrök távollétei, akik az adott napon távolléten vannak.
+ * (datum_tol <= datum <= datum_ig)
+ *
+ * @param {string} datum - ISO dátum string (pl. '2024-03-15')
+ * @returns {Object[]}
+ */
+export function getAktivTavollet(datum) {
+  try {
+    const db = getDB();
+    const result = db.exec(
+      `SELECT * FROM tavollet
+       WHERE datum_tol <= ? AND datum_ig >= ?
+       ORDER BY datum_tol`,
+      [datum, datum]
+    );
+    return rowsToObjects(result);
+  } catch (err) {
+    console.error('[crud] getAktivTavollet hiba:', err);
+    throw err;
+  }
+}
+
+// ─── kompetencia tábla ───────────────────────────────────────────────────────
+
+/**
+ * addKompetencia — Sofőr–gép kompetencia kapcsolat hozzáadása.
+ * INSERT OR IGNORE: ha már létezik, csendes sikert ad vissza (nem dob hibát).
+ *
+ * @param {number} sofor_id
+ * @param {number} gep_id
+ */
+export function addKompetencia(sofor_id, gep_id) {
+  try {
+    const db = getDB();
+    db.run(
+      'INSERT OR IGNORE INTO kompetencia (sofor_id, gep_id) VALUES (?, ?)',
+      [sofor_id, gep_id]
+    );
+    const id = lastInsertId();
+    logChange('kompetencia', id, 'INSERT',
+      `Kompetencia hozzáadva: sofor_id=${sofor_id}, gep_id=${gep_id}`);
+  } catch (err) {
+    console.error('[crud] addKompetencia hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * removeKompetencia — Sofőr–gép kompetencia kapcsolat eltávolítása.
+ *
+ * @param {number} sofor_id
+ * @param {number} gep_id
+ */
+export function removeKompetencia(sofor_id, gep_id) {
+  try {
+    const db = getDB();
+    db.run(
+      'DELETE FROM kompetencia WHERE sofor_id = ? AND gep_id = ?',
+      [sofor_id, gep_id]
+    );
+    logChange('kompetencia', 0, 'DELETE',
+      `Kompetencia eltávolítva: sofor_id=${sofor_id}, gep_id=${gep_id}`);
+  } catch (err) {
+    console.error('[crud] removeKompetencia hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * getKompetenciaBySofor — Egy sofőr összes kompetencia rekordjának lekérése.
+ *
+ * @param {number} sofor_id
+ * @returns {Object[]}
+ */
+export function getKompetenciaBySofor(sofor_id) {
+  try {
+    const db = getDB();
+    const result = db.exec(
+      'SELECT * FROM kompetencia WHERE sofor_id = ? ORDER BY created_at',
+      [sofor_id]
+    );
+    return rowsToObjects(result);
+  } catch (err) {
+    console.error('[crud] getKompetenciaBySofor hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * getKompetenciaByGep — Egy géphez tartozó összes kompetencia rekord lekérése.
+ *
+ * @param {number} gep_id
+ * @returns {Object[]}
+ */
+export function getKompetenciaByGep(gep_id) {
+  try {
+    const db = getDB();
+    const result = db.exec(
+      'SELECT * FROM kompetencia WHERE gep_id = ? ORDER BY created_at',
+      [gep_id]
+    );
+    return rowsToObjects(result);
+  } catch (err) {
+    console.error('[crud] getKompetenciaByGep hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * getSoforokByGep — Azon sofőrök lekérése (teljes rekord), akik jogosultak egy gép kezelésére.
+ *
+ * @param {number} gep_id
+ * @returns {Object[]} sofor rekordok tömbje
+ */
+export function getSoforokByGep(gep_id) {
+  try {
+    const db = getDB();
+    const result = db.exec(
+      `SELECT s.* FROM sofor s
+       INNER JOIN kompetencia k ON k.sofor_id = s.id
+       WHERE k.gep_id = ?
+       ORDER BY s.teljes_nev`,
+      [gep_id]
+    );
+    return rowsToObjects(result);
+  } catch (err) {
+    console.error('[crud] getSoforokByGep hiba:', err);
     throw err;
   }
 }
