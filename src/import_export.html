@@ -286,6 +286,49 @@
     .status-ok  { color: #2D6A4F; font-size: 13px; font-weight: 500; }
     .status-err { color: var(--color-error); font-size: 13px; font-weight: 500; }
 
+    /* ─── Törzsadat import tabok ────────────────────────────────────────────── */
+    .torzsTab {
+      padding: 8px 16px;
+      border: 1px solid transparent;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      position: relative;
+      bottom: -1px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .torzsTab:hover { color: var(--color-text-primary); background: var(--color-surface-alt); }
+    .torzsTab.active {
+      color: var(--color-accent);
+      background: #fff;
+      border-color: #E8E6E1;
+      font-weight: 600;
+    }
+    .sablon-cards { display:flex; gap:16px; flex-wrap:wrap; }
+    .sablon-card {
+      flex:1; min-width:240px;
+      background:#FAFAF8; border:1px solid #E8E6E1; border-radius:8px; padding:20px 24px;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .sablon-card h3 { font-size:14px; font-weight:600; color:#1A1C1E; margin:0; }
+    .sablon-card p  { font-size:13px; color:#7A6F5E; margin:0; line-height:1.5; }
+    .torzsPreviewTable { width:100%; border-collapse:collapse; font-size:13px; }
+    .torzsPreviewTable th {
+      text-align:left; padding:8px 12px;
+      background:var(--color-surface-alt); border-bottom:1px solid var(--color-border);
+      font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase;
+      color:var(--color-text-muted); white-space:nowrap;
+    }
+    .torzsPreviewTable td { padding:8px 12px; border-bottom:1px solid var(--color-border-row); vertical-align:middle; }
+    .torzsPreviewTable tr:last-child td { border-bottom:none; }
+    .badge-new    { display:inline-block; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:600; background:#E9F5EE; color:#2D6A4F; }
+    .badge-update { display:inline-block; padding:2px 7px; border-radius:4px; font-size:11px; font-weight:600; background:#FEF3DC; color:#8A5E00; }
+
     /* ─── Spinner (egyszerű CSS alapú) ──────────────────────────────────────── */
     .spinner {
       display: inline-block;
@@ -528,6 +571,123 @@
       </div><!-- /.page-section import -->
 
       <!-- ════════════════════════════════════════════════════════════
+           D) TÖRZSADAT IMPORT / SABLON (csak adminoknak)
+      ════════════════════════════════════════════════════════════ -->
+      <div class="page-section" id="sectionTorzsImport" style="display:none">
+        <p class="page-section-title">Törzsadat import / sablon</p>
+
+        <!-- Tab fejléc -->
+        <div style="display:flex; gap:4px; margin-bottom:0; border-bottom:1px solid #E8E6E1;">
+          <button class="torzsTab active" id="tabTorzsSofor">Sofőr import</button>
+          <button class="torzsTab"        id="tabTorzsGep">Gép import</button>
+          <button class="torzsTab"        id="tabTorzsSablon">Sablonok letöltése</button>
+        </div>
+
+        <!-- ── Sofőr import panel ── -->
+        <div id="panelTorzsSofor">
+          <div class="import-section">
+            <h2>Sofőr törzsadatok importálása Excelből</h2>
+            <p style="font-size:13px; color:#7A6F5E; margin:0 0 16px;">
+              Elvárt oszlopok (sorrendtől és ékezettől független):<br>
+              <strong>Teljes név</strong> (kötelező) &nbsp;·&nbsp; Aliasok &nbsp;·&nbsp; Belépési dátum &nbsp;·&nbsp; Státusz &nbsp;·&nbsp; Megjegyzés
+            </p>
+            <div id="soforDropZone" class="drop-zone">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#E9F5EE"/><path d="M20 26V14M15 19l5-5 5 5" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 28h14" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round"/></svg>
+              <p>Húzd ide az Excel fájlt, vagy <label for="soforFileInput">tallózz</label></p>
+              <input type="file" id="soforFileInput" accept=".xlsx,.xls" hidden>
+              <p class="drop-hint">Támogatott: .xlsx, .xls</p>
+            </div>
+          </div>
+          <div id="soforPreviewSection" class="import-section" style="display:none">
+            <h2>Előnézet — ellenőrizd és jóváhagyj</h2>
+            <div style="overflow-x:auto; max-height:400px; overflow-y:auto;">
+              <table class="torzsPreviewTable">
+                <thead>
+                  <tr>
+                    <th style="width:36px;">Import</th>
+                    <th>Teljes név</th>
+                    <th>Aliasok</th>
+                    <th>Belépési dátum</th>
+                    <th>Státusz</th>
+                    <th>Megjegyzés</th>
+                    <th>Állapot</th>
+                  </tr>
+                </thead>
+                <tbody id="soforPreviewBody"></tbody>
+              </table>
+            </div>
+            <div style="margin-top:16px; display:flex; gap:10px; align-items:center;">
+              <button class="btn-primary" id="btnSoforImportExecute">Importálás</button>
+              <button class="btn-secondary" id="btnSoforImportCancel">Mégse</button>
+            </div>
+          </div>
+          <div id="soforImportResult" style="display:none; margin-bottom:16px;"></div>
+        </div>
+
+        <!-- ── Gép import panel ── -->
+        <div id="panelTorzsGep" style="display:none">
+          <div class="import-section">
+            <h2>Gép / eszköz törzsadatok importálása Excelből</h2>
+            <p style="font-size:13px; color:#7A6F5E; margin:0 0 16px;">
+              Elvárt oszlopok (sorrendtől és ékezettől független):<br>
+              <strong>Rendszám</strong> (kötelező) &nbsp;·&nbsp; Típus &nbsp;·&nbsp; Megjegyzés
+            </p>
+            <div id="gepDropZone" class="drop-zone">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="10" fill="#E9F5EE"/><path d="M20 26V14M15 19l5-5 5 5" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 28h14" stroke="#2D6A4F" stroke-width="2" stroke-linecap="round"/></svg>
+              <p>Húzd ide az Excel fájlt, vagy <label for="gepFileInput">tallózz</label></p>
+              <input type="file" id="gepFileInput" accept=".xlsx,.xls" hidden>
+              <p class="drop-hint">Támogatott: .xlsx, .xls</p>
+            </div>
+          </div>
+          <div id="gepPreviewSection" class="import-section" style="display:none">
+            <h2>Előnézet — ellenőrizd és jóváhagyj</h2>
+            <div style="overflow-x:auto; max-height:400px; overflow-y:auto;">
+              <table class="torzsPreviewTable">
+                <thead>
+                  <tr>
+                    <th style="width:36px;">Import</th>
+                    <th>Rendszám</th>
+                    <th>Típus</th>
+                    <th>Megjegyzés</th>
+                    <th>Állapot</th>
+                  </tr>
+                </thead>
+                <tbody id="gepPreviewBody"></tbody>
+              </table>
+            </div>
+            <div style="margin-top:16px; display:flex; gap:10px; align-items:center;">
+              <button class="btn-primary" id="btnGepImportExecute">Importálás</button>
+              <button class="btn-secondary" id="btnGepImportCancel">Mégse</button>
+            </div>
+          </div>
+          <div id="gepImportResult" style="display:none; margin-bottom:16px;"></div>
+        </div>
+
+        <!-- ── Sablonok panel ── -->
+        <div id="panelTorzsSablon" style="display:none">
+          <div class="import-section">
+            <h2>Üres sablon letöltése</h2>
+            <p style="font-size:13px; color:#7A6F5E; margin:0 0 20px;">
+              Töltsd le az üres Excel sablont, töltsd ki, majd importáld vissza a Sofőr import / Gép import fülön.
+            </p>
+            <div class="sablon-cards">
+              <div class="sablon-card">
+                <h3>Sofőr sablon</h3>
+                <p>Fejlécek: Teljes név, Aliasok, Belépési dátum, Státusz, Megjegyzés</p>
+                <button class="btn-primary" id="btnDlSoforSablon">Letöltés — sofor_sablon.xlsx</button>
+              </div>
+              <div class="sablon-card">
+                <h3>Gép sablon</h3>
+                <p>Fejlécek: Rendszám, Típus, Megjegyzés</p>
+                <button class="btn-primary" id="btnDlGepSablon">Letöltés — gep_sablon.xlsx</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /.sectionTorzsImport -->
+
+      <!-- ════════════════════════════════════════════════════════════
            B) EXPORT SZEKCIÓ
       ════════════════════════════════════════════════════════════ -->
       <div class="page-section">
@@ -601,19 +761,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
 <script type="module">
   import { initDB, getDB, saveToIndexedDB, exportDB, importDB } from './db.js';
-  import { getAllSoforok, getAllProjektek, getAllGepek } from './crud.js';
+  import {
+    getAllSoforok, getAllProjektek, getAllGepek,
+    createSofor, updateSofor, createGep, updateGep,
+  } from './crud.js';
   import { getIdentity } from './identity.js';
   import { requireAuth, logout, isAdmin } from './auth.js';
+  import {
+    readExcelFile, getSheetsInfo, normalizeRows,
+    buildImportPreview, executeImport, saveAliasIfNew,
+  } from './import.js';
 
   const session = requireAuth();
-  import {
-    readExcelFile,
-    getSheetsInfo,
-    normalizeRows,
-    buildImportPreview,
-    executeImport,
-    saveAliasIfNew,
-  } from './import.js';
 
   // ─── Állapot ────────────────────────────────────────────────────────────────
 
@@ -645,6 +804,7 @@
   // Admin szekciók megjelenítése
   if (isAdmin()) {
     document.getElementById('sectionMasterImport').style.display = '';
+    document.getElementById('sectionTorzsImport').style.display = '';
     document.getElementById('sectionDbOps').style.display = '';
   }
 
@@ -1418,6 +1578,265 @@
       btn.textContent = 'Fájl választása…';
     }
   });
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // D) TÖRZSADAT IMPORT / SABLON
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // ─── Tab váltás ──────────────────────────────────────────────────────────────
+
+  if (isAdmin()) {
+    const tabMap = {
+      tabTorzsSofor:  'panelTorzsSofor',
+      tabTorzsGep:    'panelTorzsGep',
+      tabTorzsSablon: 'panelTorzsSablon',
+    };
+    Object.keys(tabMap).forEach(tabId => {
+      document.getElementById(tabId).addEventListener('click', () => {
+        Object.keys(tabMap).forEach(t => {
+          document.getElementById(t).classList.toggle('active', t === tabId);
+          document.getElementById(tabMap[t]).style.display = (t === tabId) ? '' : 'none';
+        });
+      });
+    });
+  }
+
+  // ─── Segédfüggvény: oszlopnév normalizálás ───────────────────────────────────
+
+  function normCol(str) {
+    return String(str ?? '').toLowerCase().trim()
+      .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i')
+      .replace(/ó/g,'o').replace(/ö/g,'o').replace(/ő/g,'o')
+      .replace(/ú/g,'u').replace(/ü/g,'u').replace(/ű/g,'u')
+      .replace(/[\s_\-]+/g,'');
+  }
+
+  function findCol(row, aliases) {
+    const normAliases = aliases.map(normCol);
+    for (const key of Object.keys(row)) {
+      if (normAliases.includes(normCol(key))) {
+        const v = row[key];
+        return (v === null || v === undefined) ? null : String(v).trim() || null;
+      }
+    }
+    return null;
+  }
+
+  // ─── Sofőr Excel parse ───────────────────────────────────────────────────────
+
+  function parseSoforExcel(workbook) {
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = window.XLSX.utils.sheet_to_json(sheet, { defval: null });
+    return rows.map(row => ({
+      teljes_nev:     findCol(row, ['teljes nev','teljesnev','nev','név','sofor','sofőr','driver','name','full name']),
+      aliasok:        findCol(row, ['aliasok','alias','becenev','becenév','aliases','rovid','rövid']),
+      belepesi_datum: findCol(row, ['belepesi datum','belépési dátum','belepesi_datum','belepés','belépes','start date','hired','datum','dátum']),
+      statusz:        findCol(row, ['statusz','státusz','status','allapot','állapot']),
+      megjegyzes:     findCol(row, ['megjegyzes','megjegyzés','note','comment','megjegyz']),
+    })).filter(r => r.teljes_nev);
+  }
+
+  // ─── Sofőr drop zone ─────────────────────────────────────────────────────────
+
+  let soforImportRows = [];
+
+  function setupSoforDropZone() {
+    const dz  = document.getElementById('soforDropZone');
+    const inp = document.getElementById('soforFileInput');
+
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if(f) handleSoforFile(f); });
+    dz.addEventListener('click', e => { if(e.target.tagName!=='LABEL'&&e.target.tagName!=='INPUT') inp.click(); });
+    inp.addEventListener('change', e => { const f=e.target.files[0]; if(f) handleSoforFile(f); inp.value=''; });
+  }
+
+  async function handleSoforFile(file) {
+    document.getElementById('soforPreviewSection').style.display = 'none';
+    document.getElementById('soforImportResult').style.display = 'none';
+    try {
+      const wb = await readExcelFile(file);
+      soforImportRows = parseSoforExcel(wb);
+      if (!soforImportRows.length) { alert('Nem találtam "Teljes név" oszlopot vagy adatot a fájlban.'); return; }
+      renderSoforPreview(soforImportRows);
+    } catch(e) { alert('Fájl hiba: ' + e.message); }
+  }
+
+  function renderSoforPreview(rows) {
+    const tbody = document.getElementById('soforPreviewBody');
+    tbody.innerHTML = '';
+    const existing = new Set(soforok.map(s => s.teljes_nev.toLowerCase().trim()));
+
+    rows.forEach((r, i) => {
+      const isUpdate = existing.has(r.teljes_nev.toLowerCase().trim());
+      const badge = isUpdate
+        ? '<span class="badge-update">Frissítés</span>'
+        : '<span class="badge-new">Új</span>';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="text-align:center;"><input type="checkbox" id="soforCb_${i}" checked></td>
+        <td style="font-weight:500;">${escHtml(r.teljes_nev)}</td>
+        <td style="font-size:12px; color:#7A6F5E;">${escHtml(r.aliasok||'—')}</td>
+        <td style="font-size:12px;">${escHtml(r.belepesi_datum||'—')}</td>
+        <td style="font-size:12px;">${escHtml(r.statusz||'aktiv')}</td>
+        <td style="font-size:12px; color:#7A6F5E;">${escHtml(r.megjegyzes||'—')}</td>
+        <td>${badge}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('soforPreviewSection').style.display = '';
+  }
+
+  document.getElementById('btnSoforImportExecute')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnSoforImportExecute');
+    btn.disabled = true; btn.textContent = 'Mentés...';
+    let inserted=0, updated=0, skipped=0;
+    try {
+      soforImportRows.forEach((r, i) => {
+        const cb = document.getElementById(`soforCb_${i}`);
+        if (!cb?.checked) { skipped++; return; }
+        const existing = soforok.find(s => s.teljes_nev.toLowerCase().trim() === r.teljes_nev.toLowerCase().trim());
+        const data = {
+          teljes_nev:     r.teljes_nev,
+          aliasok:        r.aliasok ?? undefined,
+          belepesi_datum: r.belepesi_datum ?? undefined,
+          statusz:        r.statusz || 'aktiv',
+          megjegyzes:     r.megjegyzes ?? undefined,
+        };
+        if (existing) { updateSofor(existing.id, data); updated++; }
+        else { createSofor(data); inserted++; }
+      });
+      await saveToIndexedDB();
+      soforok = getAllSoforok();
+      document.getElementById('soforPreviewSection').style.display = 'none';
+      const res = document.getElementById('soforImportResult');
+      res.innerHTML = `<div class="result-banner result-banner--success"><span>${inserted} új sofőr</span><span>${updated} frissítve</span><span>${skipped} kihagyva</span></div>`;
+      res.style.display = '';
+    } catch(e) { alert('Import hiba: ' + e.message); }
+    finally { btn.disabled=false; btn.textContent='Importálás'; }
+  });
+
+  document.getElementById('btnSoforImportCancel')?.addEventListener('click', () => {
+    document.getElementById('soforPreviewSection').style.display = 'none';
+  });
+
+  // ─── Gép Excel parse ─────────────────────────────────────────────────────────
+
+  function parseGepExcel(workbook) {
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = window.XLSX.utils.sheet_to_json(sheet, { defval: null });
+    return rows.map(row => ({
+      rendszam:   findCol(row, ['rendszam','rendszám','plate','rendszam','jarmszam','járm. szám','rego']),
+      tipus:      findCol(row, ['tipus','típus','type','geptipus','géptípus','jarmu','jármű','vehicle type']),
+      megjegyzes: findCol(row, ['megjegyzes','megjegyzés','note','comment','leiras','leírás']),
+    })).filter(r => r.rendszam);
+  }
+
+  let gepImportRows = [];
+
+  function setupGepDropZone() {
+    const dz  = document.getElementById('gepDropZone');
+    const inp = document.getElementById('gepFileInput');
+
+    dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+    dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); const f=e.dataTransfer.files[0]; if(f) handleGepFile(f); });
+    dz.addEventListener('click', e => { if(e.target.tagName!=='LABEL'&&e.target.tagName!=='INPUT') inp.click(); });
+    inp.addEventListener('change', e => { const f=e.target.files[0]; if(f) handleGepFile(f); inp.value=''; });
+  }
+
+  async function handleGepFile(file) {
+    document.getElementById('gepPreviewSection').style.display = 'none';
+    document.getElementById('gepImportResult').style.display = 'none';
+    try {
+      const wb = await readExcelFile(file);
+      gepImportRows = parseGepExcel(wb);
+      if (!gepImportRows.length) { alert('Nem találtam "Rendszám" oszlopot vagy adatot a fájlban.'); return; }
+      renderGepPreview(gepImportRows);
+    } catch(e) { alert('Fájl hiba: ' + e.message); }
+  }
+
+  function renderGepPreview(rows) {
+    const tbody = document.getElementById('gepPreviewBody');
+    tbody.innerHTML = '';
+    const existing = new Set(gepek.map(g => (g.rendszam||'').toLowerCase().trim()));
+
+    rows.forEach((r, i) => {
+      const isUpdate = existing.has((r.rendszam||'').toLowerCase().trim());
+      const badge = isUpdate
+        ? '<span class="badge-update">Frissítés</span>'
+        : '<span class="badge-new">Új</span>';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="text-align:center;"><input type="checkbox" id="gepCb_${i}" checked></td>
+        <td style="font-weight:500;">${escHtml(r.rendszam)}</td>
+        <td style="font-size:12px;">${escHtml(r.tipus||'—')}</td>
+        <td style="font-size:12px; color:#7A6F5E;">${escHtml(r.megjegyzes||'—')}</td>
+        <td>${badge}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    document.getElementById('gepPreviewSection').style.display = '';
+  }
+
+  document.getElementById('btnGepImportExecute')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnGepImportExecute');
+    btn.disabled = true; btn.textContent = 'Mentés...';
+    let inserted=0, updated=0, skipped=0;
+    try {
+      gepImportRows.forEach((r, i) => {
+        const cb = document.getElementById(`gepCb_${i}`);
+        if (!cb?.checked) { skipped++; return; }
+        const existing = gepek.find(g => (g.rendszam||'').toLowerCase().trim() === (r.rendszam||'').toLowerCase().trim());
+        const data = { rendszam: r.rendszam, tipus: r.tipus ?? undefined, megjegyzes: r.megjegyzes ?? undefined };
+        if (existing) { updateGep(existing.id, data); updated++; }
+        else { createGep(data); inserted++; }
+      });
+      await saveToIndexedDB();
+      gepek = getAllGepek();
+      document.getElementById('gepPreviewSection').style.display = 'none';
+      const res = document.getElementById('gepImportResult');
+      res.innerHTML = `<div class="result-banner result-banner--success"><span>${inserted} új gép</span><span>${updated} frissítve</span><span>${skipped} kihagyva</span></div>`;
+      res.style.display = '';
+    } catch(e) { alert('Import hiba: ' + e.message); }
+    finally { btn.disabled=false; btn.textContent='Importálás'; }
+  });
+
+  document.getElementById('btnGepImportCancel')?.addEventListener('click', () => {
+    document.getElementById('gepPreviewSection').style.display = 'none';
+  });
+
+  // ─── Sablon letöltések ───────────────────────────────────────────────────────
+
+  document.getElementById('btnDlSoforSablon')?.addEventListener('click', () => {
+    const ws = window.XLSX.utils.aoa_to_sheet([
+      ['Teljes név', 'Aliasok (vesszővel elválasztva)', 'Belépési dátum (ÉÉÉÉ-HH-NN)', 'Státusz (aktiv/inaktiv)', 'Megjegyzés'],
+    ]);
+    ws['!cols'] = [{wch:28},{wch:32},{wch:28},{wch:22},{wch:36}];
+    const wb = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb, ws, 'Sofőrök');
+    window.XLSX.writeFile(wb, 'sofor_sablon.xlsx');
+    flashDownloadBtn(document.getElementById('btnDlSoforSablon'), 'Letöltés — sofor_sablon.xlsx');
+  });
+
+  document.getElementById('btnDlGepSablon')?.addEventListener('click', () => {
+    const ws = window.XLSX.utils.aoa_to_sheet([
+      ['Rendszám', 'Típus', 'Megjegyzés'],
+    ]);
+    ws['!cols'] = [{wch:16},{wch:28},{wch:40}];
+    const wb = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb, ws, 'Gépek');
+    window.XLSX.writeFile(wb, 'gep_sablon.xlsx');
+    flashDownloadBtn(document.getElementById('btnDlGepSablon'), 'Letöltés — gep_sablon.xlsx');
+  });
+
+  // Drop zone-ok inicializálása (csak ha admin)
+  if (isAdmin()) {
+    setupSoforDropZone();
+    setupGepDropZone();
+  }
 
   // ─── Segédfüggvények ─────────────────────────────────────────────────────────
 
