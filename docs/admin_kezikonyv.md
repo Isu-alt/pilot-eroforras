@@ -94,10 +94,16 @@ Az SQLite adatbázis sémáját a `db.js` `createSchema()` függvénye hozza lé
 |---|---|
 | `sofor` | Sofőrök törzsadatai |
 | `projekt` | Projektek / munkák törzsadatai |
+| `gep_csoport` | Eszközcsoportok (gép kategóriák) |
 | `gep` | Gépek / járművek törzsadatai |
 | `napi_terv` | Diszpécser által tervezett napi beosztás |
 | `napi_teny` | Ténylegesen elvégzett munka rögzítve |
+| `tavollet` | Sofőrök tervezett távolléte (szabadság, betegség) |
+| `kompetencia` | Sofőr–gép jogosultsági mátrix (egyedi gép szintű) |
+| `kompetencia_csoport` | Sofőr–gépcsoport jogosultsági mátrix (csoport szintű) |
 | `valtozas_log` | Audit trail — minden írási művelet naplóbejegyzése |
+
+> **Soft delete:** A legtöbb táblán szerepel `torolt INTEGER NOT NULL DEFAULT 0` oszlop. A CRUD függvények törléskor `torolt = 1`-re állítják a rekordot (`UPDATE ... SET torolt = 1`), nem törik a sort a táblából. A listázó függvények (`getAllSoforok`, `getAllGepek`, stb.) csak `WHERE torolt = 0` feltétellel dolgoznak. Ez biztosítja, hogy az audit nyomvonal teljes maradjon, és a törölt rekordok visszaállíthatók maradjanak.
 
 ---
 
@@ -246,6 +252,99 @@ CREATE TABLE IF NOT EXISTS napi_teny (
 | `fuvarok_szama` | INTEGER | Nem | Fuvarszám |
 | `allapot` | TEXT | Nem | `rogzitett` / `lezart` / `torolt` |
 | `forras` | TEXT | Nem | `manualis` / `import` |
+
+---
+
+### `gep_csoport` tábla
+
+```sql
+CREATE TABLE IF NOT EXISTS gep_csoport (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    nev        TEXT NOT NULL UNIQUE,
+    torolt     INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP
+);
+```
+
+| Mező | Típus | Kötelező | Megjegyzés |
+|---|---|---|---|
+| `id` | INTEGER | AUTO | |
+| `nev` | TEXT | Igen | Egyedi csoportnév (pl. `Daruk`, `Tehergépkocsik`) |
+| `torolt` | INTEGER | Nem | Soft delete jelző (`0` = aktív, `1` = törölt) |
+
+---
+
+### `tavollet` tábla
+
+```sql
+CREATE TABLE IF NOT EXISTS tavollet (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    sofor_id    INTEGER NOT NULL REFERENCES sofor(id),
+    datum_tol   DATE    NOT NULL,
+    datum_ig    DATE    NOT NULL,
+    tipus       TEXT    NOT NULL DEFAULT 'szabadsag', -- szabadsag | betegseg | egyeb
+    megjegyzes  TEXT,
+    torolt      INTEGER NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP
+);
+```
+
+| Mező | Típus | Kötelező | Megjegyzés |
+|---|---|---|---|
+| `sofor_id` | INTEGER | Igen (FK) | → `sofor.id` |
+| `datum_tol` | DATE | Igen | Távollét kezdete `YYYY-MM-DD` |
+| `datum_ig` | DATE | Igen | Távollét vége `YYYY-MM-DD` |
+| `tipus` | TEXT | Igen | `szabadsag` / `betegseg` / `egyeb` |
+| `torolt` | INTEGER | Nem | Soft delete jelző |
+
+---
+
+### `kompetencia` tábla (egyedi gép jogosultság)
+
+```sql
+CREATE TABLE IF NOT EXISTS kompetencia (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    sofor_id  INTEGER NOT NULL REFERENCES sofor(id),
+    gep_id    INTEGER NOT NULL REFERENCES gep(id),
+    torolt    INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(sofor_id, gep_id)
+);
+```
+
+| Mező | Típus | Kötelező | Megjegyzés |
+|---|---|---|---|
+| `sofor_id` | INTEGER | Igen (FK) | → `sofor.id` |
+| `gep_id` | INTEGER | Igen (FK) | → `gep.id` |
+| `torolt` | INTEGER | Nem | Soft delete jelző |
+
+CRUD függvények: `addKompetencia`, `removeKompetencia`, `getKompetenciaBySofor`, `getKompetenciaByGep`, `getSoforokByGep`.
+
+---
+
+### `kompetencia_csoport` tábla (gépcsoport jogosultság)
+
+```sql
+CREATE TABLE IF NOT EXISTS kompetencia_csoport (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    sofor_id   INTEGER NOT NULL REFERENCES sofor(id),
+    csoport_id INTEGER NOT NULL REFERENCES gep_csoport(id),
+    torolt     INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+| Mező | Típus | Kötelező | Megjegyzés |
+|---|---|---|---|
+| `sofor_id` | INTEGER | Igen (FK) | → `sofor.id` |
+| `csoport_id` | INTEGER | Igen (FK) | → `gep_csoport.id` |
+| `torolt` | INTEGER | Nem | Soft delete jelző |
+
+CRUD függvények: `addKompetenciaCsoport`, `removeKompetenciaCsoport`, `getKompetenciaCsoportBySofor`, `getSoforokByCsoportKompetencia`.
+
+**Reaktiválás logika:** Az `addKompetenciaCsoport` ellenőrzi, hogy létezik-e már sor ugyanarra a `(sofor_id, csoport_id)` párosra (akár törölt állapotban is). Ha igen, `torolt = 0`-ra állítja vissza; ha nem, új sort szúr be. Ez biztosítja, hogy a táblában ne keletkezzenek duplikált sorok, és az audit nyomvonal folyamatos maradjon.
 
 ---
 

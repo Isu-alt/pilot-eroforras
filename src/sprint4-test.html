@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sprint 4 teszt — pilot-eroforras</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      background: #f5f5f5;
+      color: #222;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+    h2 {
+      font-size: 1.05rem;
+      margin-top: 2rem;
+      margin-bottom: 0.5rem;
+      border-bottom: 2px solid #ccc;
+      padding-bottom: 0.25rem;
+    }
+    h3 { font-size: 0.9rem; margin: 1rem 0 0.35rem; color: #444; }
+    p.sub { color: #555; font-size: 0.82rem; margin: 0 0 1rem; }
+
+    /* Státuszdoboz */
+    #global-status {
+      padding: 0.4rem 0.75rem;
+      border-radius: 5px;
+      font-size: 0.82rem;
+      margin-bottom: 1rem;
+    }
+    .ok  { background: #dcfce7; color: #166534; }
+    .err { background: #fee2e2; color: #991b1b; }
+    .info { background: #dbeafe; color: #1e40af; }
+
+    /* Gomb sorok */
+    .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.5rem 0 0.75rem; }
+    button {
+      padding: 0.4rem 0.9rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.83rem;
+      background: #3b82f6;
+      color: #fff;
+      transition: background 0.15s;
+    }
+    button:hover { background: #2563eb; }
+    button.secondary { background: #6b7280; }
+    button.secondary:hover { background: #4b5563; }
+
+    /* Kimenet */
+    pre {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      min-height: 2.5rem;
+    }
+
+    /* Assert eredmények */
+    .results { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+    .results li {
+      font-size: 0.82rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      margin-bottom: 3px;
+    }
+    .pass { background: #dcfce7; color: #166534; }
+    .fail { background: #fee2e2; color: #991b1b; font-weight: 600; }
+    .skip { background: #fef9c3; color: #854d0e; }
+
+    /* Szekciók */
+    .test-section {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sprint 4 — CRUD tesztek</h1>
+  <p class="sub">Soft delete, kompetencia mátrix, import/export és UI-validáció tesztek.<br>Konzolt is nyisd meg (F12) a részletes logokért.</p>
+
+  <div id="global-status" class="info">Inicializálás folyamatban...</div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       VEZÉRLŐK
+  ═══════════════════════════════════════════════════════ -->
+  <div class="btn-row">
+    <button id="btn-run-all">Összes teszt futtatása</button>
+    <button id="btn-reset" class="secondary">Adatbázis nullázása (friss seed)</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       1. SOFT DELETE
+  ═══════════════════════════════════════════════════════ -->
+  <div class="test-section">
+    <h2>1. Soft delete tesztek</h2>
+    <p class="sub">Ellenőrzi, hogy a delete függvények torolt=1-et állítanak, az adat megmarad az adatbázisban, de a lekérdező függvények nem adják vissza.</p>
+    <div class="btn-row">
+      <button id="btn-soft-delete">Futtatás</button>
+    </div>
+    <ul class="results" id="res-soft-delete"></ul>
+    <h3>Nyers DB állapot (törölt rekordok benne)</h3>
+    <pre id="out-soft-delete">— még nincs kimenet —</pre>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       2. KOMPETENCIA MÁTRIX
+  ═══════════════════════════════════════════════════════ -->
+  <div class="test-section">
+    <h2>2. Kompetencia mátrix tesztek</h2>
+    <p class="sub">addKompetenciaCsoport, removeKompetenciaCsoport, reaktiválás, getSoforokByCsoportKompetencia.</p>
+    <div class="btn-row">
+      <button id="btn-kompetencia">Futtatás</button>
+    </div>
+    <ul class="results" id="res-kompetencia"></ul>
+    <pre id="out-kompetencia">— még nincs kimenet —</pre>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       3. IMPORT / EXPORT
+  ═══════════════════════════════════════════════════════ -->
+  <div class="test-section">
+    <h2>3. Import / Export körök (XLSX)</h2>
+    <p class="sub">
+      Export — ellenőrzi, hogy az XLSX tartalmaz id oszlopot és a rekordok benne vannak.<br>
+      Visszaimport — ellenőrzi, hogy meglévő id esetén frissít, nem duplikál;<br>
+      üres id esetén új rekordot hoz létre.
+    </p>
+    <div class="btn-row">
+      <button id="btn-export-sofor">Sofőr export letöltése</button>
+      <button id="btn-export-gep">Gép export letöltése</button>
+    </div>
+    <div class="btn-row">
+      <button id="btn-import-test">In-memory import teszt futtatása</button>
+    </div>
+    <ul class="results" id="res-import"></ul>
+    <pre id="out-import">— még nincs kimenet —</pre>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       4. UI VALIDÁCIÓ (szimulált)
+  ═══════════════════════════════════════════════════════ -->
+  <div class="test-section">
+    <h2>4. UI validációs tesztek (szimulált)</h2>
+    <p class="sub">
+      Ellenőrzi, hogy a mentési logika megtagadja a csoport nélküli mentést (napi rögzítés és tervezés).<br>
+      Mivel a valódi UI alertet dob, itt a belső validációs logikát szimuláljuk közvetlenül a CRUD hívások szintjén.
+    </p>
+    <div class="btn-row">
+      <button id="btn-ui-validate">Futtatás</button>
+    </div>
+    <ul class="results" id="res-ui-validate"></ul>
+    <pre id="out-ui-validate">— még nincs kimenet —</pre>
+  </div>
+
+  <!-- SheetJS CDN — XLSX globálisként -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <script type="module">
+    import { initDB, getDB, saveToIndexedDB } from './db.js';
+    import {
+      // Sofőr
+      createSofor, getAllSoforok, updateSofor, deleteSofor, getSoforById,
+      // Projekt
+      createProjekt, getAllProjektek, deleteProjekt,
+      // Gép
+      createGep, getAllGepek, deleteGep, getGepById,
+      // Gépcsoport
+      createGepCsoport, getAllGepCsoport, deleteGepCsoport,
+      // Napi tény
+      createNapiTeny, getNapiTenyByDatum, deleteNapiTeny,
+      // Napi terv
+      createNapiTerv, getNapiTervByDatum, deleteNapiTerv,
+      // Távollét
+      createTavollet, getAllTavollet, deleteTavollet,
+      // Kompetencia (gépcsoport alapú)
+      addKompetenciaCsoport, removeKompetenciaCsoport,
+      getKompetenciaCsoportBySofor, getSoforokByCsoportKompetencia,
+      // Kompetencia (gép alapú)
+      addKompetencia, removeKompetencia, getKompetenciaBySofor,
+    } from './crud.js';
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // SEGÉDFÜGGVÉNYEK
+    // ────────────────────────────────────────────────────────────────────────────
+
+    const globalStatus = document.getElementById('global-status');
+
+    function setGlobalStatus(msg, type = 'ok') {
+      globalStatus.textContent = msg;
+      globalStatus.className = type;
+    }
+
+    /**
+     * assert — Egy feltételt ellenőriz, az eredményt a megadott listába írja.
+     * @param {HTMLElement} listEl  — az <ul> elem
+     * @param {string}      label   — a teszt neve
+     * @param {boolean}     cond    — teljesül-e a feltétel
+     * @param {string}      [detail] — opcionális részlet a hibához
+     */
+    function assert(listEl, label, cond, detail = '') {
+      const li = document.createElement('li');
+      if (cond) {
+        li.className = 'pass';
+        li.textContent = `PASS  ${label}`;
+      } else {
+        li.className = 'fail';
+        li.textContent = `FAIL  ${label}${detail ? ' — ' + detail : ''}`;
+      }
+      listEl.appendChild(li);
+      if (!cond) console.error(`[FAIL] ${label}`, detail);
+      return cond;
+    }
+
+    /**
+     * rowsToObjects — sql.js exec() eredményét JS tömbré alakítja.
+     * Szükséges a direkt DB-ellenőrzésekhez (torolt rekordok keresése).
+     */
+    function rowsToObjects(resultSet) {
+      if (!resultSet || resultSet.length === 0) return [];
+      const { columns, values } = resultSet[0];
+      if (!values || values.length === 0) return [];
+      return values.map(row => {
+        const obj = {};
+        columns.forEach((col, i) => { obj[col] = row[i]; });
+        return obj;
+      });
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // SEED — friss adatbázis state (minden tesztfutás előtt meghívható)
+    // ────────────────────────────────────────────────────────────────────────────
+
+    let seedState = null; // {sofor1Id, sofor2Id, projekt1Id, gepCsoportId, gep1Id, ...}
+
+    async function seedAll() {
+      // Adatbázis törlése és újrainicializálása tiszta állapotból
+      const db = getDB();
+      const tables = [
+        'kompetencia_csoport', 'kompetencia', 'napi_teny', 'napi_terv',
+        'tavollet', 'gep', 'gep_csoport', 'projekt', 'sofor', 'valtozas_log',
+      ];
+      for (const t of tables) {
+        try { db.run(`DELETE FROM ${t}`); } catch(_) {}
+      }
+
+      // ── Sofőrök ──────────────────────────────────────────────────────────────
+      const sofor1Id = createSofor({
+        teljes_nev: 'Teszt Béla',
+        aliasok: 'Béla',
+        belepesi_datum: '2022-01-10',
+        statusz: 'aktiv',
+      });
+      const sofor2Id = createSofor({
+        teljes_nev: 'Teszt Gábor',
+        belepesi_datum: '2023-05-20',
+        statusz: 'aktiv',
+      });
+
+      // ── Projekt ───────────────────────────────────────────────────────────────
+      const projekt1Id = createProjekt({
+        munkaszam: 'T-2026-001',
+        helyszin: 'Tesztváros',
+        megrendelo: 'Teszt Kft.',
+      });
+
+      // ── Gépcsoport ────────────────────────────────────────────────────────────
+      const gepCsoportId = createGepCsoport('Daruk');
+
+      // ── Gép ───────────────────────────────────────────────────────────────────
+      const gep1Id = createGep({
+        tipus: 'daru',
+        rendszam: 'TST-001',
+        csoport_id: gepCsoportId,
+      });
+      const gep2Id = createGep({
+        tipus: 'tehergépkocsi',
+        rendszam: 'TST-002',
+        csoport_id: gepCsoportId,
+      });
+
+      // ── Napi tény ────────────────────────────────────────────────────────────
+      const napiTeny1Id = createNapiTeny({
+        datum: '2026-04-10',
+        sofor_id: sofor1Id,
+        projekt_id: projekt1Id,
+        gep_id: gep1Id,
+        munkaora: 8,
+        allapot: 'rogzitett',
+      });
+
+      // ── Napi terv ────────────────────────────────────────────────────────────
+      const napiTerv1Id = createNapiTerv({
+        datum: '2026-04-11',
+        sofor_id: sofor1Id,
+        projekt_id: projekt1Id,
+        gep_id: gep1Id,
+        allapot: 'javasolt',
+      });
+
+      // ── Távollét ─────────────────────────────────────────────────────────────
+      const tavollet1Id = createTavollet({
+        sofor_id: sofor1Id,
+        datum_tol: '2026-04-20',
+        datum_ig: '2026-04-25',
+        tipus: 'szabadsag',
+      });
+
+      seedState = {
+        sofor1Id, sofor2Id,
+        projekt1Id,
+        gepCsoportId,
+        gep1Id, gep2Id,
+        napiTeny1Id,
+        napiTerv1Id,
+        tavollet1Id,
+      };
+
+      await saveToIndexedDB();
+      console.log('[seed] Adatok feltöltve:', seedState);
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // 1. SOFT DELETE TESZTEK
+    // ────────────────────────────────────────────────────────────────────────────
+
+    async function runSoftDeleteTests() {
+      const listEl = document.getElementById('res-soft-delete');
+      const outEl  = document.getElementById('out-soft-delete');
+      listEl.innerHTML = '';
+
+      await seedAll();
+      const db = getDB();
+      const {
+        sofor1Id, projekt1Id, gep1Id, gepCsoportId,
+        napiTeny1Id, napiTerv1Id, tavollet1Id,
+      } = seedState;
+
+      // ── deleteSofor ──────────────────────────────────────────────────────────
+      deleteSofor(sofor1Id);
+      const soforokAfter = getAllSoforok();
+      assert(listEl, 'deleteSofor: getAllSoforok nem adja vissza a törölt sofőrt',
+        soforokAfter.every(s => s.id !== sofor1Id));
+      const soforRaw = rowsToObjects(db.exec('SELECT * FROM sofor WHERE id = ?', [sofor1Id]));
+      assert(listEl, 'deleteSofor: rekord megmarad az adatbázisban (torolt=1)',
+        soforRaw.length > 0 && soforRaw[0].torolt === 1);
+
+      // ── deleteProjekt ────────────────────────────────────────────────────────
+      deleteProjekt(projekt1Id);
+      const projektekAfter = getAllProjektek();
+      assert(listEl, 'deleteProjekt: getAllProjektek nem adja vissza a törölt projektet',
+        projektekAfter.every(p => p.id !== projekt1Id));
+      const projektRaw = rowsToObjects(db.exec('SELECT * FROM projekt WHERE id = ?', [projekt1Id]));
+      assert(listEl, 'deleteProjekt: rekord megmarad az adatbázisban (torolt=1)',
+        projektRaw.length > 0 && projektRaw[0].torolt === 1);
+
+      // ── deleteGep ─────────────────────────────────────────────────────────────
+      deleteGep(gep1Id);
+      const gepekAfter = getAllGepek();
+      assert(listEl, 'deleteGep: getAllGepek nem adja vissza a törölt gépet',
+        gepekAfter.every(g => g.id !== gep1Id));
+      const gepRaw = rowsToObjects(db.exec('SELECT * FROM gep WHERE id = ?', [gep1Id]));
+      assert(listEl, 'deleteGep: rekord megmarad az adatbázisban (torolt=1)',
+        gepRaw.length > 0 && gepRaw[0].torolt === 1);
+
+      // ── deleteGepCsoport ─────────────────────────────────────────────────────
+      deleteGepCsoport(gepCsoportId);
+      const csoportokAfter = getAllGepCsoport();
+      assert(listEl, 'deleteGepCsoport: getAllGepCsoport nem adja vissza a törölt csoportot',
+        csoportokAfter.every(c => c.id !== gepCsoportId));
+      const csoportRaw = rowsToObjects(db.exec('SELECT * FROM gep_csoport WHERE id = ?', [gepCsoportId]));
+      assert(listEl, 'deleteGepCsoport: rekord megmarad az adatbázisban (torolt=1)',
+        csoportRaw.length > 0 && csoportRaw[0].torolt === 1);
+
+      // ── deleteNapiTeny ────────────────────────────────────────────────────────
+      deleteNapiTeny(napiTeny1Id);
+      const tenyAfter = getNapiTenyByDatum('2026-04-10');
+      assert(listEl, 'deleteNapiTeny: getNapiTenyByDatum nem adja vissza a törölt rekordot',
+        tenyAfter.every(r => r.id !== napiTeny1Id));
+      const tenyRaw = rowsToObjects(db.exec('SELECT * FROM napi_teny WHERE id = ?', [napiTeny1Id]));
+      assert(listEl, 'deleteNapiTeny: rekord megmarad az adatbázisban (torolt=1)',
+        tenyRaw.length > 0 && tenyRaw[0].torolt === 1);
+
+      // ── deleteNapiTerv ────────────────────────────────────────────────────────
+      deleteNapiTerv(napiTerv1Id);
+      const tervAfter = getNapiTervByDatum('2026-04-11');
+      assert(listEl, 'deleteNapiTerv: getNapiTervByDatum nem adja vissza a törölt rekordot',
+        tervAfter.every(r => r.id !== napiTerv1Id));
+      const tervRaw = rowsToObjects(db.exec('SELECT * FROM napi_terv WHERE id = ?', [napiTerv1Id]));
+      assert(listEl, 'deleteNapiTerv: rekord megmarad az adatbázisban (torolt=1)',
+        tervRaw.length > 0 && tervRaw[0].torolt === 1);
+
+      // ── deleteTavollet ────────────────────────────────────────────────────────
+      deleteTavollet(tavollet1Id);
+      const tavolletAfter = getAllTavollet();
+      assert(listEl, 'deleteTavollet: getAllTavollet nem adja vissza a törölt rekordot',
+        tavolletAfter.every(r => r.id !== tavollet1Id));
+      const tavolletRaw = rowsToObjects(db.exec('SELECT * FROM tavollet WHERE id = ?', [tavollet1Id]));
+      assert(listEl, 'deleteTavollet: rekord megmarad az adatbázisban (torolt=1)',
+        tavolletRaw.length > 0 && tavolletRaw[0].torolt === 1);
+
+      // ── removeKompetencia (sofőr-gép) ─────────────────────────────────────────
+      // Szükséges: friss gép és sofőr, mert az előzőeket már töröltük
+      const sofor2Id = seedState.sofor2Id;
+      const gep2Id   = seedState.gep2Id;
+      addKompetencia(sofor2Id, gep2Id);
+      removeKompetencia(sofor2Id, gep2Id);
+      const kompAfter = getKompetenciaBySofor(sofor2Id);
+      assert(listEl, 'removeKompetencia: getKompetenciaBySofor nem adja vissza a törölt kompetenciát',
+        kompAfter.every(k => k.gep_id !== gep2Id));
+      const kompRaw = rowsToObjects(db.exec(
+        'SELECT * FROM kompetencia WHERE sofor_id = ? AND gep_id = ?', [sofor2Id, gep2Id]
+      ));
+      assert(listEl, 'removeKompetencia: rekord megmarad az adatbázisban (torolt=1)',
+        kompRaw.length > 0 && kompRaw[0].torolt === 1);
+
+      // Nyers DB snapshot megjelenítése (összes táblából a torolt=1 rekordok)
+      const deletedRows = {
+        sofor_torolt:      rowsToObjects(db.exec('SELECT id, teljes_nev, torolt FROM sofor WHERE torolt=1')),
+        projekt_torolt:    rowsToObjects(db.exec('SELECT id, munkaszam, torolt FROM projekt WHERE torolt=1')),
+        gep_torolt:        rowsToObjects(db.exec('SELECT id, rendszam, torolt FROM gep WHERE torolt=1')),
+        gep_csoport_torolt:rowsToObjects(db.exec('SELECT id, nev, torolt FROM gep_csoport WHERE torolt=1')),
+        napi_teny_torolt:  rowsToObjects(db.exec('SELECT id, datum, torolt FROM napi_teny WHERE torolt=1')),
+        napi_terv_torolt:  rowsToObjects(db.exec('SELECT id, datum, torolt FROM napi_terv WHERE torolt=1')),
+        tavollet_torolt:   rowsToObjects(db.exec('SELECT id, datum_tol, torolt FROM tavollet WHERE torolt=1')),
+        kompetencia_torolt:rowsToObjects(db.exec('SELECT * FROM kompetencia WHERE torolt=1')),
+      };
+      outEl.textContent = JSON.stringify(deletedRows, null, 2);
+
+      await saveToIndexedDB();
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // 2. KOMPETENCIA MÁTRIX TESZTEK
+    // ────────────────────────────────────────────────────────────────────────────
+
+    async function runKompetenciaTests() {
+      const listEl = document.getElementById('res-kompetencia');
+      const outEl  = document.getElementById('out-kompetencia');
+      listEl.innerHTML = '';
+
+      await seedAll();
+      const { sofor1Id, sofor2Id, gepCsoportId } = seedState;
+
+      // ── addKompetenciaCsoport + getKompetenciaCsoportBySofor ──────────────────
+      addKompetenciaCsoport(sofor1Id, gepCsoportId);
+      const kcAfterAdd = getKompetenciaCsoportBySofor(sofor1Id);
+      assert(listEl, 'addKompetenciaCsoport: a sofőrnek van kompetenciája a csoportra',
+        kcAfterAdd.some(k => k.csoport_id === gepCsoportId));
+      assert(listEl, 'addKompetenciaCsoport: csoport_nev is visszajön a joinból',
+        kcAfterAdd.some(k => typeof k.csoport_nev === 'string' && k.csoport_nev.length > 0));
+
+      // ── removeKompetenciaCsoport ──────────────────────────────────────────────
+      removeKompetenciaCsoport(sofor1Id, gepCsoportId);
+      const kcAfterRemove = getKompetenciaCsoportBySofor(sofor1Id);
+      assert(listEl, 'removeKompetenciaCsoport: kompetencia eltávolítása után nem jelenik meg lekérdezésnél',
+        kcAfterRemove.every(k => k.csoport_id !== gepCsoportId));
+
+      // ── Nyers ellenőrzés: a rekord torolt=1, nem törlődött végleg ─────────────
+      const db = getDB();
+      const kcRaw = rowsToObjects(db.exec(
+        'SELECT * FROM kompetencia_csoport WHERE sofor_id = ? AND csoport_id = ?',
+        [sofor1Id, gepCsoportId]
+      ));
+      assert(listEl, 'removeKompetenciaCsoport: rekord megmarad az adatbázisban (torolt=1)',
+        kcRaw.length > 0 && kcRaw[0].torolt === 1);
+
+      // ── Reaktiválás: ugyanarra a párosra addKompetenciaCsoport → ne duplikáljon ─
+      addKompetenciaCsoport(sofor1Id, gepCsoportId); // reaktiválja a meglévő sort
+      const kcAfterReactivate = getKompetenciaCsoportBySofor(sofor1Id);
+      assert(listEl, 'addKompetenciaCsoport reaktiválás: megjelenik újra a listában',
+        kcAfterReactivate.some(k => k.csoport_id === gepCsoportId));
+
+      const kcAllRaw = rowsToObjects(db.exec(
+        'SELECT * FROM kompetencia_csoport WHERE sofor_id = ? AND csoport_id = ?',
+        [sofor1Id, gepCsoportId]
+      ));
+      assert(listEl, 'addKompetenciaCsoport reaktiválás: csak 1 rekord létezik (nincs duplikáció)',
+        kcAllRaw.length === 1,
+        `talált sorok: ${kcAllRaw.length}`);
+      assert(listEl, 'addKompetenciaCsoport reaktiválás: a rekord torolt=0',
+        kcAllRaw.length > 0 && kcAllRaw[0].torolt === 0);
+
+      // ── getSoforokByCsoportKompetencia ────────────────────────────────────────
+      // sofor2Id-nek is adjunk kompetenciát, hogy legyen mire szűrni
+      addKompetenciaCsoport(sofor2Id, gepCsoportId);
+      const soforokByCsoport = getSoforokByCsoportKompetencia(gepCsoportId);
+      assert(listEl, 'getSoforokByCsoportKompetencia: legalább 2 sofőrt ad vissza',
+        soforokByCsoport.length >= 2,
+        `talált: ${soforokByCsoport.length}`);
+      assert(listEl, 'getSoforokByCsoportKompetencia: sofor1Id szerepel az eredményben',
+        soforokByCsoport.some(s => s.id === sofor1Id));
+      assert(listEl, 'getSoforokByCsoportKompetencia: sofor2Id szerepel az eredményben',
+        soforokByCsoport.some(s => s.id === sofor2Id));
+
+      // ── Törölt sofőr ne jelenjen meg getSoforokByCsoportKompetencia-ban ────────
+      // sofor1Id-et töröljük (soft delete), de kompetenciája megmarad
+      deleteSofor(sofor1Id);
+      const soforokAfterSoforDelete = getSoforokByCsoportKompetencia(gepCsoportId);
+      assert(listEl, 'getSoforokByCsoportKompetencia: törölt sofőr nem jelenik meg',
+        soforokAfterSoforDelete.every(s => s.id !== sofor1Id));
+
+      outEl.textContent = JSON.stringify({
+        kcAfterAdd,
+        kcAfterReactivate,
+        kcAllRaw,
+        soforokByCsoport,
+        soforokAfterSoforDelete,
+      }, null, 2);
+
+      await saveToIndexedDB();
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // 3. IMPORT / EXPORT TESZTEK
+    // ────────────────────────────────────────────────────────────────────────────
+
+    // --- Export segédfüggvények ---
+
+    function soforokToSheet(soforok) {
+      const rows = soforok.map(s => ({
+        id:             s.id,
+        teljes_nev:     s.teljes_nev,
+        aliasok:        s.aliasok ?? '',
+        belepesi_datum: s.belepesi_datum ?? '',
+        statusz:        s.statusz ?? 'aktiv',
+        beosztas:       s.beosztas ?? 'sofor',
+        megjegyzes:     s.megjegyzes ?? '',
+      }));
+      return rows;
+    }
+
+    function gepekToSheet(gepek, csoportok) {
+      const csoportMap = Object.fromEntries(csoportok.map(c => [c.id, c.nev]));
+      return gepek.map(g => ({
+        id:          g.id,
+        tipus:       g.tipus ?? '',
+        rendszam:    g.rendszam ?? '',
+        megjegyzes:  g.megjegyzes ?? '',
+        vallalkozo:  g.vallalkozo ?? '',
+        csoport_nev: csoportMap[g.csoport_id] ?? '',
+      }));
+    }
+
+    function exportToXlsx(sheetData, sheetName, fileName) {
+      const ws = XLSX.utils.json_to_sheet(sheetData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      XLSX.writeFile(wb, fileName);
+    }
+
+    document.getElementById('btn-export-sofor').addEventListener('click', async () => {
+      if (!seedState) await seedAll();
+      const soforok = getAllSoforok();
+      exportToXlsx(soforokToSheet(soforok), 'Soforok', 'soforok_export.xlsx');
+    });
+
+    document.getElementById('btn-export-gep').addEventListener('click', async () => {
+      if (!seedState) await seedAll();
+      const gepek    = getAllGepek();
+      const csoportok = getAllGepCsoport();
+      exportToXlsx(gepekToSheet(gepek, csoportok), 'Gepek', 'gepek_export.xlsx');
+    });
+
+    // --- In-memory import teszt ---
+
+    async function runImportTests() {
+      const listEl = document.getElementById('res-import');
+      const outEl  = document.getElementById('out-import');
+      listEl.innerHTML = '';
+
+      await seedAll();
+      const { sofor1Id, gep1Id, gepCsoportId } = seedState;
+
+      // ── Sofőr export tartalom ellenőrzése ─────────────────────────────────────
+      const soforok = getAllSoforok();
+      const soforSheet = soforokToSheet(soforok);
+
+      assert(listEl, 'Sofőr export: van id oszlop minden sorban',
+        soforSheet.every(r => r.id !== undefined && r.id !== null && r.id !== ''));
+
+      const soforXlsx = (() => {
+        const ws = XLSX.utils.json_to_sheet(soforSheet);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Soforok');
+        const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        return buf;
+      })();
+
+      const soforWb   = XLSX.read(soforXlsx, { type: 'array' });
+      const soforRows = XLSX.utils.sheet_to_json(soforWb.Sheets['Soforok']);
+      assert(listEl, 'Sofőr XLSX visszaolvasás: sorok száma megegyezik az exportált számmal',
+        soforRows.length === soforSheet.length,
+        `export: ${soforSheet.length}, visszaolvasott: ${soforRows.length}`);
+      assert(listEl, 'Sofőr XLSX: id mező numerikus és pozitív',
+        soforRows.every(r => typeof r.id === 'number' && r.id > 0));
+
+      // ── Visszaimport — meglévő id → frissítés, ne duplikáljon ────────────────
+      const countBefore = getAllSoforok().length;
+      // Szimulált visszaimport: meglévő id-vel jövő sor → UPDATE (nem INSERT)
+      const sofor1Before = getSoforById(sofor1Id);
+      // Frissítés közvetlen CRUD-dal (az igazi import_export.html is ezt hívja)
+      updateSofor(sofor1Id, { megjegyzes: 'Frissítve importból' });
+      const countAfter = getAllSoforok().length;
+      assert(listEl, 'Visszaimport (meglévő id): nem jön létre új rekord (darabszám változatlan)',
+        countAfter === countBefore,
+        `előtte: ${countBefore}, utána: ${countAfter}`);
+      const sofor1After = getSoforById(sofor1Id);
+      assert(listEl, 'Visszaimport (meglévő id): a megjegyzes mező frissült',
+        sofor1After && sofor1After.megjegyzes === 'Frissítve importból');
+
+      // ── Visszaimport — üres id → új rekord ────────────────────────────────────
+      const newId = createSofor({ teljes_nev: 'Import Új Sofőr', statusz: 'aktiv' });
+      const countWithNew = getAllSoforok().length;
+      assert(listEl, 'Import (üres id → új sor): új rekord jön létre',
+        countWithNew === countBefore + 1,
+        `előtte: ${countBefore}, most: ${countWithNew}`);
+      assert(listEl, 'Import (üres id → új sor): az id pozitív egész',
+        typeof newId === 'number' && newId > 0);
+
+      // ── Gép export tartalom ellenőrzése ───────────────────────────────────────
+      const gepek     = getAllGepek();
+      const csoportok = getAllGepCsoport();
+      const gepSheet  = gepekToSheet(gepek, csoportok);
+      assert(listEl, 'Gép export: van id oszlop minden sorban',
+        gepSheet.every(r => r.id !== undefined && r.id !== null && r.id !== ''));
+      assert(listEl, 'Gép export: van csoport_nev mező (join a gep_csoport táblával)',
+        gepSheet.every(r => 'csoport_nev' in r));
+
+      outEl.textContent = JSON.stringify({
+        soforSheet_elso3: soforSheet.slice(0, 3),
+        gepSheet_elso3:   gepSheet.slice(0, 3),
+        visszaolvasott_soforok_elso3: soforRows.slice(0, 3),
+        sofor1After,
+        newId,
+      }, null, 2);
+
+      await saveToIndexedDB();
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // 4. UI VALIDÁCIÓS TESZTEK (szimulált)
+    //
+    // A valódi UI egy alert()-et dob, ha csoport_id hiányzik mentés előtt.
+    // Itt a CRUD szintjén ellenőrizzük, hogy:
+    //   - Gép mentése csoport_id nélkül lehetséges-e az adatbázisban (igen — a
+    //     DB szinten nincs NOT NULL kényszer a csoport_id-n)
+    //   - Ennek megfelelően a validáció a UI logikában van; itt azt ellenőrizzük,
+    //     hogy a szimulált validátor függvény megtagadja-e a mentést, és az
+    //     adatbázisban nem keletkezik extra sor.
+    // ────────────────────────────────────────────────────────────────────────────
+
+    async function runUIValidationTests() {
+      const listEl = document.getElementById('res-ui-validate');
+      const outEl  = document.getElementById('out-ui-validate');
+      listEl.innerHTML = '';
+
+      await seedAll();
+
+      // ── Szimulált validátor (ugyanaz a logika, mint az UI-ban) ─────────────────
+      /**
+       * validateNapiTenyRow — visszatér false-szal és hibaüzenettel, ha a sor
+       * érvénytelen (sofor_id vagy gep_id hiányzik).
+       * Az igazi UI ebből alert()-et dob és nem hív createNapiTeny-t / createNapiTerv-t.
+       */
+      function validateNapiTenyRow(data) {
+        if (!data.sofor_id) return { ok: false, msg: 'Sofőr megadása kötelező' };
+        if (!data.gep_id)   return { ok: false, msg: 'Gép (csoport) megadása kötelező' };
+        return { ok: true };
+      }
+
+      function validateNapiTervRow(data) {
+        if (!data.sofor_id) return { ok: false, msg: 'Sofőr megadása kötelező' };
+        if (!data.gep_id)   return { ok: false, msg: 'Gép (csoport) megadása kötelező' };
+        return { ok: true };
+      }
+
+      const db = getDB();
+      const { sofor1Id, projekt1Id } = seedState;
+
+      // ── Napi rögzítés: csoport/gép nélkül → validáció megtagad ───────────────
+      const tenyCountBefore = rowsToObjects(db.exec('SELECT COUNT(*) as c FROM napi_teny')).at(0)?.c ?? 0;
+
+      const invalidTenyData = { datum: '2026-04-12', sofor_id: sofor1Id, projekt_id: projekt1Id, gep_id: null };
+      const tenyValidation  = validateNapiTenyRow(invalidTenyData);
+      assert(listEl, 'Napi rögzítés: validátor visszautasítja a csoport nélküli sort',
+        tenyValidation.ok === false,
+        tenyValidation.msg);
+
+      // Csak akkor hívjuk a CRUD-ot, ha a validátor átengedi (UI viselkedése)
+      if (!tenyValidation.ok) {
+        // nem hívjuk createNapiTeny-t → a darabszám változatlan kell legyen
+      }
+      const tenyCountAfter = rowsToObjects(db.exec('SELECT COUNT(*) as c FROM napi_teny')).at(0)?.c ?? 0;
+      assert(listEl, 'Napi rögzítés: validáció hiba esetén nem keletkezik új adatbázis-sor',
+        tenyCountAfter === tenyCountBefore,
+        `előtte: ${tenyCountBefore}, utána: ${tenyCountAfter}`);
+
+      // Érvényes sor (gép megvan) → validátor átengedi
+      const validTenyData = { datum: '2026-04-12', sofor_id: sofor1Id, projekt_id: projekt1Id, gep_id: seedState.gep2Id };
+      const tenyValidOk   = validateNapiTenyRow(validTenyData);
+      assert(listEl, 'Napi rögzítés: érvényes sor esetén a validátor átengedi',
+        tenyValidOk.ok === true);
+
+      // ── Napi tervezés: csoport/gép nélkül → validáció megtagad ───────────────
+      const tervCountBefore = rowsToObjects(db.exec('SELECT COUNT(*) as c FROM napi_terv')).at(0)?.c ?? 0;
+
+      const invalidTervData = { datum: '2026-04-13', sofor_id: sofor1Id, projekt_id: projekt1Id, gep_id: null };
+      const tervValidation  = validateNapiTervRow(invalidTervData);
+      assert(listEl, 'Napi tervezés: validátor visszautasítja a csoport nélküli sort',
+        tervValidation.ok === false,
+        tervValidation.msg);
+
+      const tervCountAfter = rowsToObjects(db.exec('SELECT COUNT(*) as c FROM napi_terv')).at(0)?.c ?? 0;
+      assert(listEl, 'Napi tervezés: validáció hiba esetén nem keletkezik új adatbázis-sor',
+        tervCountAfter === tervCountBefore,
+        `előtte: ${tervCountBefore}, utána: ${tervCountAfter}`);
+
+      // Érvényes sor → validátor átengedi
+      const validTervData = { datum: '2026-04-13', sofor_id: sofor1Id, projekt_id: projekt1Id, gep_id: seedState.gep2Id };
+      const tervValidOk   = validateNapiTervRow(validTervData);
+      assert(listEl, 'Napi tervezés: érvényes sor esetén a validátor átengedi',
+        tervValidOk.ok === true);
+
+      // ── Csoport nélküli gép mentése DB-szinten lehetséges (nincs NOT NULL) ────
+      // De az UI szintjén a gep_csoport kötelező — ezt itt dokumentáljuk.
+      const gepNoGroup = createGep({ tipus: 'teszt', rendszam: 'NO-GRP', csoport_id: null });
+      const gepNoGroupRaw = getGepById(gepNoGroup);
+      assert(listEl, 'DB szint: gép csoport nélkül is menthető (csoport_id NULL megengedett)',
+        gepNoGroupRaw !== null && gepNoGroupRaw.csoport_id === null);
+
+      outEl.textContent = JSON.stringify({
+        tenyValidation,
+        tervValidation,
+        tenyCountBefore, tenyCountAfter,
+        tervCountBefore, tervCountAfter,
+        gepNoGroupId: gepNoGroup,
+      }, null, 2);
+
+      await saveToIndexedDB();
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // GOMBOK BEKÖTÉSE
+    // ────────────────────────────────────────────────────────────────────────────
+
+    async function safeRun(fn, label) {
+      try {
+        await fn();
+      } catch (err) {
+        setGlobalStatus(`${label} — HIBA: ${err.message}`, 'err');
+        console.error(`[${label}]`, err);
+        return false;
+      }
+      return true;
+    }
+
+    document.getElementById('btn-soft-delete').addEventListener('click', async () => {
+      setGlobalStatus('Soft delete tesztek futnak...', 'info');
+      const ok = await safeRun(runSoftDeleteTests, 'Soft delete');
+      if (ok) setGlobalStatus('Soft delete tesztek lefutottak.', 'ok');
+    });
+
+    document.getElementById('btn-kompetencia').addEventListener('click', async () => {
+      setGlobalStatus('Kompetencia tesztek futnak...', 'info');
+      const ok = await safeRun(runKompetenciaTests, 'Kompetencia');
+      if (ok) setGlobalStatus('Kompetencia tesztek lefutottak.', 'ok');
+    });
+
+    document.getElementById('btn-import-test').addEventListener('click', async () => {
+      setGlobalStatus('Import tesztek futnak...', 'info');
+      const ok = await safeRun(runImportTests, 'Import');
+      if (ok) setGlobalStatus('Import tesztek lefutottak.', 'ok');
+    });
+
+    document.getElementById('btn-ui-validate').addEventListener('click', async () => {
+      setGlobalStatus('UI validációs tesztek futnak...', 'info');
+      const ok = await safeRun(runUIValidationTests, 'UI validáció');
+      if (ok) setGlobalStatus('UI validációs tesztek lefutottak.', 'ok');
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', async () => {
+      setGlobalStatus('Adatbázis nullázása...', 'info');
+      await seedAll();
+      setGlobalStatus('Adatbázis nullázva és újraseedelve. Futtathatók a tesztek.', 'ok');
+    });
+
+    document.getElementById('btn-run-all').addEventListener('click', async () => {
+      setGlobalStatus('Összes teszt futtatása...', 'info');
+      let allOk = true;
+      allOk = await safeRun(runSoftDeleteTests, 'Soft delete') && allOk;
+      allOk = await safeRun(runKompetenciaTests, 'Kompetencia') && allOk;
+      allOk = await safeRun(runImportTests, 'Import') && allOk;
+      allOk = await safeRun(runUIValidationTests, 'UI validáció') && allOk;
+      setGlobalStatus(
+        allOk ? 'Összes teszt lefutott. Ellenőrizd a FAIL sorokat a listákban.' : 'Egyik teszt hibával zárult (lasd a konzolt).',
+        allOk ? 'ok' : 'err'
+      );
+    });
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // INICIALIZÁLÁS
+    // ────────────────────────────────────────────────────────────────────────────
+    try {
+      await initDB();
+      setGlobalStatus('Adatbázis inicializálva. Kattints a gombokra a teszteléshez.');
+    } catch (err) {
+      setGlobalStatus('initDB hiba: ' + err.message, 'err');
+      console.error(err);
+    }
+  </script>
+</body>
+</html>

@@ -143,6 +143,33 @@ Az `aliasok` mező JSON-tömbként tárolódik az adatbázisban (pl. `["Gabi","N
 
 ---
 
+### 3.4 Kompetencia mátrix
+
+A kompetencia mátrix rögzíti, hogy melyik sofőr melyik **gépcsoporthoz** (eszközkategóriához) jogosult. Ez az információ a napi tervezési és rögzítési oldalakon a sofőr–gép párosítás alapjául szolgál: csak olyan gép rendelhető egy sofőrhöz, amelyhez a sofőrnek érvényes kompetenciája van.
+
+A kompetencia kétféle szinten kezelhető:
+
+- **Gépcsoport-kompetencia** (`kompetencia_csoport` tábla): a sofőr egy teljes eszközcsoportra (pl. `Daruk`, `Tehergépkocsik`) kap jogosultságot. Ez a jellemzően használt szint, mert karbantartása egyszerűbb — ha egy új gép bekerül a csoportba, a meglévő kompetenciák automatikusan érvényesek rá.
+- **Egyedi gép-kompetencia** (`kompetencia` tábla): a sofőr egyetlen konkrét gépre kap jogosultságot. Akkor érdemes használni, ha egy gép speciális képzettséget igényel, amellyel a csoport többi tagja nem rendelkezik.
+
+#### Kompetencia hozzáadása és eltávolítása
+
+A kompetenciák a `soforok.html` oldalon, az adott sofőr szerkesztő paneljének **Kompetenciák** szekciójában kezelhetők:
+
+1. Nyisd meg a sofőr szerkesztő paneljét (ceruza ikon).
+2. A **Gépcsoport-kompetenciák** listában jelöld be a kívánt csoportokat.
+3. A módosítás azonnal mentésre kerül.
+
+> **Megjegyzés a reaktiválásról:** Ha egy korábban eltávolított kompetencia-párost újra hozzáadsz, a rendszer nem hoz létre duplikált rekordot — az eltávolított (törölt jelzővel megjelölt) sor reaktiválódik. Ez biztosítja, hogy az audit napló megőrzi a teljes előzményt.
+
+#### Fontos szabályok
+
+- Egy sofőrhöz ugyanazon csoporthoz egyszerre csak egy aktív kompetencia-bejegyzés létezhet.
+- A kompetencia törlése **soft delete** — az adat megmarad az adatbázisban (audit nyomvonal), csak az aktív lekérdezések hagyják figyelmen kívül.
+- Törölt sofőr kompetenciái nem jelennek meg a napi tervezés és rögzítés oldalakon.
+
+---
+
 ## 4. Napi tényadat rögzítése
 
 **Oldal:** `napi_rogzites.html`
