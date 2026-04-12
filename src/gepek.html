@@ -73,6 +73,15 @@
         </svg>
         Eszközcsoportok
       </a>
+      <a class="nav-item" href="./kompetencia.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Kompetencia
+      </a>
       <div class="nav-divider"></div>
       <!-- Napi rögzítés -->
       <a class="nav-item" href="./napi_rogzites.html">
@@ -175,6 +184,11 @@
       <div class="filter-tab" id="filterRetired">
         Kivont <span class="tab-count" id="countRetired">0</span>
       </div>
+      <div style="margin-left:auto; display:flex; align-items:center;">
+        <select id="filterCsoport" class="form-select" style="width:200px; height:34px; font-size:13px;">
+          <option value="">Összes csoport</option>
+        </select>
+      </div>
     </div>
 
     <!-- Tartalomterület -->
@@ -184,8 +198,7 @@
       <div class="table-container" id="tableContainer">
         <div class="table-header-row">
           <div style="width:48px; flex-shrink:0;"></div>
-          <div style="flex:2; min-width:0;">Típus / Megnevezés</div>
-          <div style="width:140px; flex-shrink:0;">Rendszám</div>
+          <div style="flex:2.5; min-width:0;">Csoport / Típus · Rendszám</div>
           <div style="flex:2; min-width:0;">Alvállalkozó</div>
           <div style="width:110px; flex-shrink:0;">Állapot</div>
           <div style="width:80px; flex-shrink:0;"></div>
@@ -205,6 +218,13 @@
         </div>
         <div class="form-panel-body">
           <div class="form-field">
+            <label class="form-label" for="inputCsoport">Csoport <span style="color:var(--color-error)">*</span></label>
+            <select class="form-select" id="inputCsoport" required>
+              <option value="">— Válassz csoportot —</option>
+            </select>
+            <span class="form-error" id="errorCsoport">A csoport megadása kötelező.</span>
+          </div>
+          <div class="form-field">
             <label class="form-label" for="inputTipus">Típus / Megnevezés <span style="color:var(--color-error)">*</span></label>
             <input class="form-input" type="text" id="inputTipus" placeholder="pl. Liebherr LTM 1050" />
             <span class="form-error" id="errorTipus">A típus megadása kötelező.</span>
@@ -216,12 +236,6 @@
           <div class="form-field">
             <label class="form-label" for="inputVallalkozo">Alvállalkozó <span style="color:var(--color-error)">*</span></label>
             <input class="form-input" type="text" id="inputVallalkozo" placeholder="pl. Zöld Út Fuvarozó és Szolgáltató Kft." list="vallalkozo-list" />
-          </div>
-          <div class="form-field">
-            <label class="form-label" for="inputCsoport">Csoport</label>
-            <select class="form-select" id="inputCsoport">
-              <option value="">— Nincs megadva —</option>
-            </select>
           </div>
           <div class="form-field">
             <label class="form-label" for="inputMegjegyzes">Megjegyzés</label>
@@ -313,11 +327,21 @@
   }
 
   function refreshCsoportSelect() {
+    // Form select (kötelező mezőként — nincs "Nincs megadva" opció)
     const sel     = document.getElementById('inputCsoport');
     const current = sel.value;
-    sel.innerHTML = '<option value="">— Nincs megadva —</option>' +
+    sel.innerHTML = '<option value="">— Válassz csoportot —</option>' +
       allCsoportok.map(c => `<option value="${c.id}">${escHtml(c.nev)}</option>`).join('');
     sel.value = current;
+
+    // Szűrő select (filterCsoport — tartalmaz "Összes csoport" opciót)
+    const filterSel     = document.getElementById('filterCsoport');
+    const filterCurrent = filterSel ? filterSel.value : '';
+    if (filterSel) {
+      filterSel.innerHTML = '<option value="">Összes csoport</option>' +
+        allCsoportok.map(c => `<option value="${c.id}">${escHtml(c.nev)}</option>`).join('');
+      filterSel.value = filterCurrent;
+    }
   }
 
   function updateVallalkozoDatalist() {
@@ -358,6 +382,13 @@
         (g.tipus    || '').toLowerCase().includes(q) ||
         (g.rendszam || '').toLowerCase().includes(q)
       );
+    }
+
+    // Csoport szűrő
+    const csoportFilterVal = document.getElementById('filterCsoport')?.value || '';
+    if (csoportFilterVal) {
+      const csoportId = parseInt(csoportFilterVal, 10);
+      filtered = filtered.filter(g => g.csoport_id === csoportId);
     }
 
     if (filtered.length === 0) {
@@ -406,20 +437,19 @@
 
     const csoport = allCsoportok.find(c => c.id === gep.csoport_id);
 
+    // Típus + rendszám összefűzve alsor szövegnek
+    const tipusRendszam = [gep.tipus, gep.rendszam].filter(Boolean).join(' · ');
+
     return `
       <div class="${rowClass}" data-id="${gep.id}">
         <div style="width:48px; flex-shrink:0; display:flex; align-items:center;">
           <div class="${iconBoxClass}">${truckSvg}</div>
         </div>
-        <div style="flex:2; min-width:0;">
-          <div style="font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-            ${escHtml(gep.tipus || '—')}
+        <div style="flex:2.5; min-width:0;">
+          <div style="font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            ${csoport ? escHtml(csoport.nev) : '<span style="color:var(--color-text-muted); font-weight:400;">— Nincs csoport —</span>'}
           </div>
-          ${gep.rendszam ? `<div style="font-size:11px; color:var(--color-text-muted); font-family:'Courier New',monospace; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(gep.rendszam)}</div>` : ''}
-          ${csoport ? `<div style="font-size:11px; color:var(--color-text-muted); margin-top:2px;">${escHtml(csoport.nev)}</div>` : ''}
-        </div>
-        <div style="width:140px; flex-shrink:0; font-family:'Courier New',monospace; font-size:12px; color:var(--color-text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-          ${escHtml(gep.rendszam || '—')}
+          ${tipusRendszam ? `<div style="font-size:11px; color:var(--color-text-muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(tipusRendszam)}</div>` : ''}
         </div>
         <div style="flex:2; min-width:0; color:var(--color-text-secondary); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
           ${escHtml(gep.vallalkozo || '—')}
@@ -484,6 +514,15 @@
   // ─── Mentés ──────────────────────────────────────────────────────────────────
 
   async function handleSave() {
+    const csoportRawCheck = document.getElementById('inputCsoport').value;
+    if (!csoportRawCheck) {
+      const sel = document.getElementById('inputCsoport');
+      sel.focus();
+      sel.style.borderColor = 'var(--color-error)';
+      document.getElementById('errorCsoport').classList.add('visible');
+      return;
+    }
+
     const tipus = document.getElementById('inputTipus').value.trim();
     if (!tipus) {
       const input = document.getElementById('inputTipus');
@@ -555,14 +594,23 @@
   document.getElementById('btnCancel').onclick     = () => closeForm();
   document.getElementById('btnPanelClose').onclick = () => closeForm();
 
-  // Hibajelzés törlése gépeléskor
+  // Hibajelzés törlése gépeléskor / váltáskor
   document.getElementById('inputTipus').oninput = () => {
     document.getElementById('inputTipus').style.borderColor = '';
     document.getElementById('errorTipus').classList.remove('visible');
   };
 
+  document.getElementById('inputCsoport').onchange = () => {
+    document.getElementById('inputCsoport').style.borderColor = '';
+    document.getElementById('errorCsoport').classList.remove('visible');
+  };
+
   document.getElementById('searchInput').oninput = (e) => {
     filterText = e.target.value.trim();
+    renderTable();
+  };
+
+  document.getElementById('filterCsoport').onchange = () => {
     renderTable();
   };
 

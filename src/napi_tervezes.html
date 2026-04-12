@@ -164,10 +164,11 @@
     .pt-status-dot--rejected { background: #C0392B; }
 
     /* ─── Oszlop flex ─────────────────────────────────────────────────────── */
-    .pt-col-vallalkozo { flex: 1.6; min-width: 0; }
-    .pt-col-sofor   { flex: 2.0; min-width: 0; }
-    .pt-col-projekt { flex: 2.0; min-width: 0; }
-    .pt-col-gep     { flex: 1.6; min-width: 0; }
+    .pt-col-vallalkozo { flex: 1.4; min-width: 0; }
+    .pt-col-csoport    { flex: 1.4; min-width: 0; }
+    .pt-col-sofor   { flex: 1.8; min-width: 0; }
+    .pt-col-projekt { flex: 1.8; min-width: 0; }
+    .pt-col-gep     { flex: 1.4; min-width: 0; }
     .pt-col-kezdes  { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
     .pt-col-befejez { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
     .pt-col-decision {
@@ -400,6 +401,15 @@
         </svg>
         Eszközcsoportok
       </a>
+      <a class="nav-item" href="./kompetencia.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Kompetencia
+      </a>
       <div class="nav-divider"></div>
       <!-- Napi rögzítés -->
       <a class="nav-item" href="./napi_rogzites.html">
@@ -550,6 +560,7 @@
           <!-- Státusz dot helyfoglaló -->
           <div class="pt-col-dot"></div>
           <div class="pt-col-vallalkozo pt-header-text">Alvállalkozó</div>
+          <div class="pt-col-csoport   pt-header-text">Csoport</div>
           <div class="pt-col-sofor   pt-header-text">Sofőr</div>
           <div class="pt-col-projekt pt-header-text">Projekt / munkaszám</div>
           <div class="pt-col-gep     pt-header-text">Gép</div>
@@ -583,7 +594,7 @@
 import { initDB, saveToIndexedDB } from './db.js';
 import { requireAuth, logout, isAdmin } from './auth.js';
 import {
-  getAllSoforok, getAllProjektek, getAllGepek,
+  getAllSoforok, getAllProjektek, getAllGepek, getAllGepCsoport,
   getNapiTenyByDatum,
   createNapiTerv, getNapiTervByDatum, updateNapiTerv, deleteNapiTerv,
   getAktivTavollet, getKompetenciaBySofor
@@ -594,9 +605,9 @@ const session = requireAuth();
 
 // ─── Állapot ─────────────────────────────────────────────────────────────────
 
-let planDate   = getTomorrowStr(); // a TERVEZETT nap (alap: holnap)
-let sourceDate = getTodayStr();    // az ALAP nap (ahonnan generálunk, alap: ma)
-let allSoforok = [], allProjektek = [], allGepek = [];
+let planDate    = getTomorrowStr(); // a TERVEZETT nap (alap: holnap)
+let sourceDate  = getTodayStr();    // az ALAP nap (ahonnan generálunk, alap: ma)
+let allSoforok  = [], allProjektek = [], allGepek = [], allCsoportok = [];
 let aktivTavollet = [];            // a tervezett napra érvényes távollétek
 let rows = [];
 // rows elem struktúra:
@@ -686,6 +697,7 @@ async function generatePlan() {
     const gepNev  = gep ? [gep.tipus, gep.rendszam].filter(Boolean).join(' – ') : '';
     return {
       id:          null,
+      csoport_id:  gep?.csoport_id || null,
       sofor_id:    t.sofor_id,
       sofor_nev:   sofor?.teljes_nev || '—',
       projekt_id:  t.projekt_id,
@@ -732,6 +744,7 @@ async function loadExistingPlan() {
 
     return {
       id:          t.id,
+      csoport_id:  gep?.csoport_id || null,
       sofor_id:    t.sofor_id,
       sofor_nev:   sofor?.teljes_nev || '—',
       projekt_id:  t.projekt_id,
@@ -777,25 +790,36 @@ window.handleEdit = function(idx) {
   renderRows();
   updateSummary();
   setTimeout(() => {
-    handleVallalkozoChange(idx);
+    handleCsoportChange(idx); // vállalkozó+csoport alapján szűr
     document.getElementById('pt_vallalkozo_' + idx)?.focus();
   }, 50);
 };
 
 window.handleVallalkozoChange = function(idx) {
+  // Csoport és gép reset vállalkozóváltáskor
+  const csoportSel = document.getElementById('pt_csoport_' + idx);
+  if (csoportSel) csoportSel.value = '';
+  const gepInput = document.getElementById('pt_gep_' + idx);
+  if (gepInput) gepInput.value = '';
+  // Datalist frissítése — csoport most üres, tehát csak vállalkozó alapján szűr
+  handleCsoportChange(idx);
+};
+
+window.handleCsoportChange = function(idx) {
   const vallalkozo = document.getElementById('pt_vallalkozo_' + idx)?.value || '';
-  const szurtGepek = vallalkozo
-    ? allGepek.filter(g => g.vallalkozo === vallalkozo)
-    : allGepek;
+  const csoportId  = document.getElementById('pt_csoport_' + idx)?.value || '';
+  const szurtGepek = allGepek.filter(g =>
+    (!vallalkozo || g.vallalkozo === vallalkozo) &&
+    (!csoportId  || String(g.csoport_id) === csoportId)
+  );
   document.getElementById('gep-list').innerHTML = szurtGepek
     .map(g => `<option value="${escAttr([g.tipus, g.rendszam].filter(Boolean).join(' – '))}"></option>`)
     .join('');
-  // Gep mező törlése ha már nem tartozik az új vállalkozóhoz
+  // Gép mező törlése ha az aktuális érték nem szerepel a szűrt listában
   const gepInput = document.getElementById('pt_gep_' + idx);
-  if (gepInput && vallalkozo) {
-    const gepNev = gepInput.value;
+  if (gepInput && gepInput.value) {
     const gepOk = szurtGepek.some(g =>
-      [g.tipus, g.rendszam].filter(Boolean).join(' – ') === gepNev
+      [g.tipus, g.rendszam].filter(Boolean).join(' – ') === gepInput.value
     );
     if (!gepOk) gepInput.value = '';
   }
@@ -806,6 +830,15 @@ window.handleSaveEdit = function(idx) {
   const vegez      = document.getElementById('pt_vegez_' + idx)?.value  || null;
   const gepNev     = (document.getElementById('pt_gep_' + idx)?.value?.trim()) || rows[idx].gep_nev;
   const vallalkozo = document.getElementById('pt_vallalkozo_' + idx)?.value || rows[idx].vallalkozo || null;
+  const csoportRaw = document.getElementById('pt_csoport_' + idx)?.value;
+  const csoportId  = parseInt(csoportRaw) || null;
+
+  // Validáció: csoport kiválasztása kötelező az eszköz megadásához
+  if (!csoportRaw) {
+    alert('A csoport kiválasztása kötelező az eszköz megadásához.');
+    document.getElementById('pt_csoport_' + idx)?.focus();
+    return;
+  }
 
   // Megpróbáljuk azonosítani a gépet a névből (datalist autocomplete alapján)
   const gep = allGepek.find(g =>
@@ -824,6 +857,7 @@ window.handleSaveEdit = function(idx) {
   rows[idx].gep_id     = gep?.id ?? rows[idx].gep_id;
   rows[idx].gep_nev    = gepNev;
   rows[idx].vallalkozo = vallalkozo;
+  rows[idx].csoport_id = csoportId;
   rows[idx].decision   = changed ? 'modified'   : 'accepted';
   rows[idx].allapot    = changed ? 'modositott' : 'elfogadott';
   editingIdx = null;
@@ -888,6 +922,20 @@ function buildRowHTML(row, idx) {
     : `<div class="pt-col-vallalkozo">
         <span class="pt-cell-text${row.vallalkozo ? '' : ' pt-cell-text--muted'}">
           ${escHtml(row.vallalkozo || '—')}
+        </span>
+       </div>`;
+
+  // Csoport cella
+  const csoportCell = isEditing
+    ? `<div class="pt-col-csoport">
+        <select class="pt-input" id="pt_csoport_${idx}" onchange="handleCsoportChange(${idx})">
+          <option value="">— Csoport —</option>
+          ${allCsoportok.map(c => `<option value="${c.id}"${String(c.id) === String(row.csoport_id || '') ? ' selected' : ''}>${escHtml(c.nev)}</option>`).join('')}
+        </select>
+       </div>`
+    : `<div class="pt-col-csoport">
+        <span class="pt-cell-text${row.csoport_id ? '' : ' pt-cell-text--muted'}">
+          ${escHtml(allCsoportok.find(c => c.id === row.csoport_id)?.nev || '—')}
         </span>
        </div>`;
 
@@ -1019,7 +1067,7 @@ function buildRowHTML(row, idx) {
 
   return `<div class="${rowCls}" data-idx="${idx}">
     <div class="pt-col-dot"><span class="${dotCls}"></span></div>
-    ${vallalkozoCell}${soforCell}${projektCell}${gepCell}${kezdesCell}${vegezCell}
+    ${vallalkozoCell}${csoportCell}${soforCell}${projektCell}${gepCell}${kezdesCell}${vegezCell}
     ${decisionCell}${actionsCell}
   </div>`;
 }
@@ -1124,6 +1172,7 @@ async function init() {
       Promise.resolve(getAllProjektek()),
       Promise.resolve(getAllGepek()),
     ]);
+    allCsoportok = getAllGepCsoport();
 
     // Datalist feltöltése a gép autocomplete-hez (inicializáláskor mind)
     document.getElementById('gep-list').innerHTML = allGepek
@@ -1163,33 +1212,28 @@ await init();
 
 // ─── Event listenererek (init után, mert az elemek már léteznek) ──────────────
 
-document.getElementById('btnPrevDay').onclick = () => {
-  planDate   = addDays(planDate,   -1);
-  sourceDate = addDays(sourceDate, -1);
+async function navigateToDate(delta) {
+  planDate   = addDays(planDate,   delta);
+  sourceDate = addDays(sourceDate, delta);
   editingIdx  = null;
   isFinalized = false;
-  aktivTavollet = getAktivTavollet(planDate);
-  loadExistingPlan().then(has => {
+  updateDatePill();
+  try { aktivTavollet = getAktivTavollet(planDate); }
+  catch (e) { console.warn('[napi_tervezes] getAktivTavollet hiba:', e); aktivTavollet = []; }
+  try {
+    const has = await loadExistingPlan();
     if (!has) rows = [];
-    renderRows();
-    updateSummary();
-    updateDatePill();
-  });
-};
+  } catch (e) {
+    console.warn('[napi_tervezes] loadExistingPlan hiba:', e);
+    rows = [];
+  }
+  renderRows();
+  updateSummary();
+  updateDatePill();
+}
 
-document.getElementById('btnNextDay').onclick = () => {
-  planDate   = addDays(planDate,   +1);
-  sourceDate = addDays(sourceDate, +1);
-  editingIdx  = null;
-  isFinalized = false;
-  aktivTavollet = getAktivTavollet(planDate);
-  loadExistingPlan().then(has => {
-    if (!has) rows = [];
-    renderRows();
-    updateSummary();
-    updateDatePill();
-  });
-};
+document.getElementById('btnPrevDay').onclick = () => navigateToDate(-1);
+document.getElementById('btnNextDay').onclick = () => navigateToDate(+1);
 
 document.getElementById('btnGenerate').onclick    = () => generatePlan();
 document.getElementById('btnSave').onclick        = () => finalizePlan();

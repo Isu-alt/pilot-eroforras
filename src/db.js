@@ -200,6 +200,17 @@ export function createSchema() {
     `);
 
     db.run(`
+      -- Gépcsoport-kompetencia mátrix (sofőr ↔ gépcsoport jogosultságok)
+      CREATE TABLE IF NOT EXISTS kompetencia_csoport (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        sofor_id   INTEGER NOT NULL REFERENCES sofor(id),
+        csoport_id INTEGER NOT NULL REFERENCES gep_csoport(id),
+        torolt     INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    db.run(`
       -- Felhasználók és szerepkörök (autentikáció)
       CREATE TABLE IF NOT EXISTS felhasznalo (
         id             INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -241,6 +252,24 @@ function runMigrations() {
     `ALTER TABLE gep ADD COLUMN vallalkozo TEXT`,
     // v5: csoport_id oszlop a gep táblához
     `ALTER TABLE gep ADD COLUMN csoport_id INTEGER REFERENCES gep_csoport(id)`,
+    // v6: soft delete — torolt oszlop a sofor és gep táblákhoz
+    `ALTER TABLE sofor ADD COLUMN torolt INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE gep ADD COLUMN torolt INTEGER NOT NULL DEFAULT 0`,
+    // v7: soft delete — torolt oszlop projekt, napi_terv, napi_teny, tavollet, gep_csoport, kompetencia táblákhoz
+    `ALTER TABLE projekt ADD COLUMN torolt INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE napi_terv ADD COLUMN torolt INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE napi_teny ADD COLUMN torolt INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE tavollet ADD COLUMN torolt INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE gep_csoport ADD COLUMN torolt INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE kompetencia ADD COLUMN torolt INTEGER NOT NULL DEFAULT 0`,
+    // v8: kompetencia_csoport tábla létrehozása (ha régi DB-n nincs meg)
+    `CREATE TABLE IF NOT EXISTS kompetencia_csoport (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      sofor_id   INTEGER NOT NULL REFERENCES sofor(id),
+      csoport_id INTEGER NOT NULL REFERENCES gep_csoport(id),
+      torolt     INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
   ];
 
   for (const sql of migrations) {
@@ -262,6 +291,18 @@ function runMigrations() {
     );
   } catch (e) {
     console.warn('[db] Alvállalkozó alapértelmezés hiba:', e.message);
+  }
+
+  // Alapértelmezett 'Egyéb' gépcsoport + NULL csoport_id-jű gépek fix
+  try {
+    db.run(`INSERT OR IGNORE INTO gep_csoport (nev) VALUES ('Egyéb')`);
+    const defaultRes = db.exec(`SELECT id FROM gep_csoport WHERE nev = 'Egyéb'`);
+    if (defaultRes.length > 0) {
+      const defaultGroupId = defaultRes[0].values[0][0];
+      db.run(`UPDATE gep SET csoport_id = ? WHERE csoport_id IS NULL`, [defaultGroupId]);
+    }
+  } catch (e) {
+    console.warn('[db] Default group migration error:', e.message);
   }
 
   console.log('[db] Migrációk lefuttatva.');

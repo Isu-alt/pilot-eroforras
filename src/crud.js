@@ -123,7 +123,7 @@ export function createSofor(data) {
 export function getAllSoforok() {
   try {
     const db = getDB();
-    const result = db.exec('SELECT * FROM sofor ORDER BY created_at DESC');
+    const result = db.exec('SELECT * FROM sofor WHERE torolt = 0 ORDER BY teljes_nev');
     return rowsToObjects(result);
   } catch (err) {
     console.error('[crud] getAllSoforok hiba:', err);
@@ -193,8 +193,8 @@ export function updateSofor(id, data) {
 export function deleteSofor(id) {
   try {
     const db = getDB();
-    db.run('DELETE FROM sofor WHERE id = ?', [id]);
-    logChange('sofor', id, 'DELETE', `Sofőr törölve (id=${id})`);
+    db.run('UPDATE sofor SET torolt = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+    logChange('sofor', id, 'SOFT_DELETE', `Sofőr törölve (soft delete, id=${id})`);
   } catch (err) {
     console.error('[crud] deleteSofor hiba:', err);
     throw err;
@@ -239,7 +239,7 @@ export function createProjekt(data) {
 export function getAllProjektek() {
   try {
     const db = getDB();
-    const result = db.exec('SELECT * FROM projekt ORDER BY created_at DESC');
+    const result = db.exec('SELECT * FROM projekt WHERE torolt = 0 ORDER BY munkaszam');
     return rowsToObjects(result);
   } catch (err) {
     console.error('[crud] getAllProjektek hiba:', err);
@@ -305,8 +305,8 @@ export function updateProjekt(id, data) {
 export function deleteProjekt(id) {
   try {
     const db = getDB();
-    db.run('DELETE FROM projekt WHERE id = ?', [id]);
-    logChange('projekt', id, 'DELETE', `Projekt törölve (id=${id})`);
+    db.run('UPDATE projekt SET torolt = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+    logChange('projekt', id, 'SOFT_DELETE', `Projekt törölve (soft delete, id=${id})`);
   } catch (err) {
     console.error('[crud] deleteProjekt hiba:', err);
     throw err;
@@ -341,7 +341,7 @@ export function createGepCsoport(nev) {
  */
 export function getAllGepCsoport() {
   try {
-    const result = getDB().exec(`SELECT * FROM gep_csoport ORDER BY nev`);
+    const result = getDB().exec(`SELECT * FROM gep_csoport WHERE torolt = 0 ORDER BY nev`);
     return rowsToObjects(result);
   } catch (err) {
     console.error('[crud] getAllGepCsoport hiba:', err);
@@ -376,10 +376,8 @@ export function updateGepCsoport(id, nev) {
  */
 export function deleteGepCsoport(id) {
   try {
-    // Először nullázzuk a gép rekordjait
-    getDB().run(`UPDATE gep SET csoport_id = NULL WHERE csoport_id = ?`, [id]);
-    getDB().run(`DELETE FROM gep_csoport WHERE id = ?`, [id]);
-    logChange('gep_csoport', id, 'DELETE', `Gépcsoport törölve (id=${id})`);
+    getDB().run('UPDATE gep_csoport SET torolt = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+    logChange('gep_csoport', id, 'SOFT_DELETE', `Gépcsoport törölve (soft delete, id=${id})`);
   } catch (err) {
     console.error('[crud] deleteGepCsoport hiba:', err);
     throw err;
@@ -425,7 +423,7 @@ export function createGep(data) {
 export function getAllGepek() {
   try {
     const db = getDB();
-    const result = db.exec('SELECT * FROM gep ORDER BY created_at DESC');
+    const result = db.exec('SELECT * FROM gep WHERE torolt = 0 ORDER BY tipus');
     return rowsToObjects(result);
   } catch (err) {
     console.error('[crud] getAllGepek hiba:', err);
@@ -497,8 +495,8 @@ export function updateGep(id, data) {
 export function deleteGep(id) {
   try {
     const db = getDB();
-    db.run('DELETE FROM gep WHERE id = ?', [id]);
-    logChange('gep', id, 'DELETE', `Gép törölve (id=${id})`);
+    db.run('UPDATE gep SET torolt = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+    logChange('gep', id, 'SOFT_DELETE', `Gép törölve (soft delete, id=${id})`);
   } catch (err) {
     console.error('[crud] deleteGep hiba:', err);
     throw err;
@@ -554,7 +552,7 @@ export function createNapiTeny(data) {
 export function getNapiTenyByDatum(datum) {
   try {
     const db = getDB();
-    const result = db.exec('SELECT * FROM napi_teny WHERE datum = ? ORDER BY kezd_idopont', [datum]);
+    const result = db.exec('SELECT * FROM napi_teny WHERE datum = ? AND torolt = 0 ORDER BY kezd_idopont', [datum]);
     return rowsToObjects(result);
   } catch (err) {
     console.error('[crud] getNapiTenyByDatum hiba:', err);
@@ -632,8 +630,8 @@ export function updateNapiTeny(id, data) {
 export function deleteNapiTeny(id) {
   try {
     const db = getDB();
-    db.run('DELETE FROM napi_teny WHERE id = ?', [id]);
-    logChange('napi_teny', id, 'DELETE', `Napi tény törölve (id=${id})`);
+    db.run('UPDATE napi_teny SET torolt = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+    logChange('napi_teny', id, 'SOFT_DELETE', `Napi tény törölve (soft delete, id=${id})`);
   } catch (err) {
     console.error('[crud] deleteNapiTeny hiba:', err);
     throw err;
@@ -687,7 +685,7 @@ export function createNapiTerv(data) {
 export function getNapiTervByDatum(datum) {
   try {
     const db = getDB();
-    const result = db.exec('SELECT * FROM napi_terv WHERE datum = ? ORDER BY kezdes', [datum]);
+    const result = db.exec('SELECT * FROM napi_terv WHERE datum = ? AND torolt = 0 ORDER BY kezdes', [datum]);
     return rowsToObjects(result);
   } catch (err) {
     console.error('[crud] getNapiTervByDatum hiba:', err);
@@ -763,8 +761,8 @@ export function updateNapiTerv(id, data) {
 export function deleteNapiTerv(id) {
   try {
     const db = getDB();
-    db.run('DELETE FROM napi_terv WHERE id = ?', [id]);
-    logChange('napi_terv', id, 'DELETE', `Napi terv törölve (id=${id})`);
+    db.run('UPDATE napi_terv SET torolt = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+    logChange('napi_terv', id, 'SOFT_DELETE', `Napi terv törölve (soft delete, id=${id})`);
   } catch (err) {
     console.error('[crud] deleteNapiTerv hiba:', err);
     throw err;
@@ -831,7 +829,7 @@ export function createTavollet(data) {
 export function getAllTavollet() {
   try {
     const db = getDB();
-    const result = db.exec('SELECT * FROM tavollet ORDER BY created_at DESC');
+    const result = db.exec('SELECT * FROM tavollet WHERE torolt = 0 ORDER BY created_at DESC');
     return rowsToObjects(result);
   } catch (err) {
     console.error('[crud] getAllTavollet hiba:', err);
@@ -901,8 +899,8 @@ export function updateTavollet(id, data) {
 export function deleteTavollet(id) {
   try {
     const db = getDB();
-    db.run('DELETE FROM tavollet WHERE id = ?', [id]);
-    logChange('tavollet', id, 'DELETE', `Távollét törölve (id=${id})`);
+    db.run('UPDATE tavollet SET torolt = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
+    logChange('tavollet', id, 'SOFT_DELETE', `Távollét törölve (soft delete, id=${id})`);
   } catch (err) {
     console.error('[crud] deleteTavollet hiba:', err);
     throw err;
@@ -921,7 +919,7 @@ export function getAktivTavollet(datum) {
     const db = getDB();
     const result = db.exec(
       `SELECT * FROM tavollet
-       WHERE datum_tol <= ? AND datum_ig >= ?
+       WHERE datum_tol <= ? AND datum_ig >= ? AND torolt = 0
        ORDER BY datum_tol`,
       [datum, datum]
     );
@@ -958,7 +956,7 @@ export function addKompetencia(sofor_id, gep_id) {
 }
 
 /**
- * removeKompetencia — Sofőr–gép kompetencia kapcsolat eltávolítása.
+ * removeKompetencia — Sofőr–gép kompetencia kapcsolat eltávolítása (soft delete).
  *
  * @param {number} sofor_id
  * @param {number} gep_id
@@ -967,11 +965,11 @@ export function removeKompetencia(sofor_id, gep_id) {
   try {
     const db = getDB();
     db.run(
-      'DELETE FROM kompetencia WHERE sofor_id = ? AND gep_id = ?',
+      'UPDATE kompetencia SET torolt = 1 WHERE sofor_id = ? AND gep_id = ? AND torolt = 0',
       [sofor_id, gep_id]
     );
-    logChange('kompetencia', 0, 'DELETE',
-      `Kompetencia eltávolítva: sofor_id=${sofor_id}, gep_id=${gep_id}`);
+    logChange('kompetencia', 0, 'SOFT_DELETE',
+      `Kompetencia eltávolítva (soft delete): sofor_id=${sofor_id}, gep_id=${gep_id}`);
   } catch (err) {
     console.error('[crud] removeKompetencia hiba:', err);
     throw err;
@@ -988,7 +986,7 @@ export function getKompetenciaBySofor(sofor_id) {
   try {
     const db = getDB();
     const result = db.exec(
-      'SELECT * FROM kompetencia WHERE sofor_id = ? ORDER BY created_at',
+      'SELECT * FROM kompetencia WHERE sofor_id = ? AND torolt = 0 ORDER BY created_at',
       [sofor_id]
     );
     return rowsToObjects(result);
@@ -1008,7 +1006,7 @@ export function getKompetenciaByGep(gep_id) {
   try {
     const db = getDB();
     const result = db.exec(
-      'SELECT * FROM kompetencia WHERE gep_id = ? ORDER BY created_at',
+      'SELECT * FROM kompetencia WHERE gep_id = ? AND torolt = 0 ORDER BY created_at',
       [gep_id]
     );
     return rowsToObjects(result);
@@ -1030,13 +1028,120 @@ export function getSoforokByGep(gep_id) {
     const result = db.exec(
       `SELECT s.* FROM sofor s
        INNER JOIN kompetencia k ON k.sofor_id = s.id
-       WHERE k.gep_id = ?
+       WHERE k.gep_id = ? AND k.torolt = 0 AND s.torolt = 0
        ORDER BY s.teljes_nev`,
       [gep_id]
     );
     return rowsToObjects(result);
   } catch (err) {
     console.error('[crud] getSoforokByGep hiba:', err);
+    throw err;
+  }
+}
+
+// ─── kompetencia_csoport tábla ────────────────────────────────────────────────
+// Gépcsoport-alapú kompetencia (sofőr ↔ gépcsoport jogosultságok)
+
+/**
+ * addKompetenciaCsoport — Sofőr–gépcsoport kompetencia kapcsolat hozzáadása.
+ * INSERT OR IGNORE: ha már létezik aktív rekord, csendesen sikert ad.
+ *
+ * @param {number} sofor_id
+ * @param {number} csoport_id
+ */
+export function addKompetenciaCsoport(sofor_id, csoport_id) {
+  try {
+    const db = getDB();
+    // Ha létezik törölt rekord, aktiváljuk azt; különben újat szúrunk be
+    const existing = db.exec(
+      'SELECT id FROM kompetencia_csoport WHERE sofor_id = ? AND csoport_id = ?',
+      [sofor_id, csoport_id]
+    );
+    if (existing.length > 0 && existing[0].values.length > 0) {
+      const existingId = existing[0].values[0][0];
+      db.run('UPDATE kompetencia_csoport SET torolt = 0 WHERE id = ?', [existingId]);
+      logChange('kompetencia_csoport', existingId, 'UPDATE',
+        `Kompetencia visszaállítva: sofor_id=${sofor_id}, csoport_id=${csoport_id}`);
+    } else {
+      db.run(
+        'INSERT INTO kompetencia_csoport (sofor_id, csoport_id) VALUES (?, ?)',
+        [sofor_id, csoport_id]
+      );
+      const id = lastInsertId();
+      logChange('kompetencia_csoport', id, 'INSERT',
+        `Csoport-kompetencia hozzáadva: sofor_id=${sofor_id}, csoport_id=${csoport_id}`);
+    }
+  } catch (err) {
+    console.error('[crud] addKompetenciaCsoport hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * removeKompetenciaCsoport — Sofőr–gépcsoport kompetencia eltávolítása (soft delete).
+ *
+ * @param {number} sofor_id
+ * @param {number} csoport_id
+ */
+export function removeKompetenciaCsoport(sofor_id, csoport_id) {
+  try {
+    const db = getDB();
+    db.run(
+      'UPDATE kompetencia_csoport SET torolt = 1 WHERE sofor_id = ? AND csoport_id = ? AND torolt = 0',
+      [sofor_id, csoport_id]
+    );
+    logChange('kompetencia_csoport', 0, 'SOFT_DELETE',
+      `Csoport-kompetencia eltávolítva: sofor_id=${sofor_id}, csoport_id=${csoport_id}`);
+  } catch (err) {
+    console.error('[crud] removeKompetenciaCsoport hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * getKompetenciaCsoportBySofor — Egy sofőr aktív gépcsoport-kompetenciáinak lekérése.
+ *
+ * @param {number} sofor_id
+ * @returns {Object[]} kompetencia_csoport rekordok
+ */
+export function getKompetenciaCsoportBySofor(sofor_id) {
+  try {
+    const db = getDB();
+    const result = db.exec(
+      `SELECT kc.*, gc.nev as csoport_nev
+       FROM kompetencia_csoport kc
+       INNER JOIN gep_csoport gc ON gc.id = kc.csoport_id
+       WHERE kc.sofor_id = ? AND kc.torolt = 0
+       ORDER BY gc.nev`,
+      [sofor_id]
+    );
+    return rowsToObjects(result);
+  } catch (err) {
+    console.error('[crud] getKompetenciaCsoportBySofor hiba:', err);
+    throw err;
+  }
+}
+
+/**
+ * getSoforokByCsoportKompetencia — Azon sofőrök lekérése, akiknek kompetenciájuk van
+ * egy adott gépcsoportra.
+ *
+ * @param {number} csoport_id
+ * @returns {Object[]} sofor rekordok
+ */
+export function getSoforokByCsoportKompetencia(csoport_id) {
+  try {
+    const db = getDB();
+    const result = db.exec(
+      `SELECT s.* FROM sofor s
+       INNER JOIN kompetencia_csoport kc ON kc.sofor_id = s.id
+       WHERE kc.csoport_id = ? AND kc.torolt = 0 AND s.torolt = 0
+       ORDER BY s.teljes_nev`,
+      [csoport_id]
+    );
+    return rowsToObjects(result);
+  } catch (err) {
+    console.error('[crud] getSoforokByCsoportKompetencia hiba:', err);
     throw err;
   }
 }

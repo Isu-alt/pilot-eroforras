@@ -13,7 +13,7 @@
     .date-nav {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       margin-left: 16px;
     }
     .date-nav-btn {
@@ -29,16 +29,22 @@
       background: #EDEBE6;
       border-color: #C8C4BC;
     }
-    .date-pill {
+    .date-picker-input {
       border: 1.5px solid #2D6A4F;
       border-radius: 6px;
-      padding: 6px 14px;
+      padding: 5px 10px;
       font-family: 'Inter', system-ui;
       font-size: 14px;
       font-weight: 600;
       color: #1A1C1E;
-      white-space: nowrap;
+      background: #fff;
+      cursor: pointer;
+      outline: none;
+      height: 34px;
+      box-sizing: border-box;
     }
+    .date-picker-input:hover { border-color: #245c44; }
+    .date-picker-input:focus { border-color: #1a4a35; box-shadow: 0 0 0 2px rgba(45,106,79,.15); }
 
     /* ─── Progress ────────────────────────────────────────────────────────── */
     .progress-area {
@@ -147,10 +153,11 @@
     .rt-badge--incomplete{ background: #F5DDD9; color: #C0392B; font-weight: 700; }
 
     /* ─── Oszlop szélességek ──────────────────────────────────────────────── */
-    .rt-col-vallalkozo { flex: 1.6; min-width: 0; }
-    .rt-col-sofor      { flex: 2;   min-width: 0; }
-    .rt-col-projekt    { flex: 2;   min-width: 0; }
-    .rt-col-gep        { flex: 1.5; min-width: 0; }
+    .rt-col-vallalkozo { flex: 1.4; min-width: 0; }
+    .rt-col-csoport    { flex: 1.4; min-width: 0; }
+    .rt-col-sofor      { flex: 1.8; min-width: 0; }
+    .rt-col-projekt    { flex: 1.8; min-width: 0; }
+    .rt-col-gep        { flex: 1.4; min-width: 0; }
     .rt-col-kezdes     { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
     .rt-col-befejez    { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
     .rt-col-munkaora   { width: 64px; min-width: 64px; flex-shrink: 0; text-align: center; }
@@ -285,6 +292,15 @@
         </svg>
         Eszközcsoportok
       </a>
+      <a class="nav-item" href="./kompetencia.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Kompetencia
+      </a>
       <div class="nav-divider"></div>
       <!-- Napi rögzítés — aktív -->
       <a class="nav-item active" href="./napi_rogzites.html">
@@ -373,7 +389,7 @@
               <path d="M9 3L5 7l4 4" stroke="#7A6F5E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
-          <div class="date-pill" id="currentDatePill">2026-04-03 — péntek (ma)</div>
+          <input type="date" class="date-picker-input" id="datePicker" title="Kattints a naptárra">
           <button class="date-nav-btn" id="btnNextDay" title="Következő nap">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M5 3l4 4-4 4" stroke="#7A6F5E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -411,13 +427,14 @@
           <div class="rt-badge-slot"></div>
           <div class="rt-col-projekt    rt-header-text">Munkaszám</div>
           <div class="rt-col-vallalkozo rt-header-text">Alvállalkozó</div>
+          <div class="rt-col-csoport   rt-header-text">Csoport</div>
           <div class="rt-col-gep        rt-header-text">Eszköz</div>
           <div class="rt-col-sofor      rt-header-text">Személy</div>
           <div class="rt-col-kezdes  rt-header-text" style="text-align:center;">Kezdés</div>
-          <div class="rt-col-befejez rt-header-text" style="text-align:center;">Befejezés</div>
+          <div class="rt-col-befejez rt-header-text" style="text-align:center;">Bef.</div>
           <div class="rt-col-munkaora rt-header-text" style="text-align:center;">Óra</div>
           <div class="rt-col-fuvarok  rt-header-text" style="text-align:center;">Fuvar</div>
-          <div class="rt-col-megjegyzes rt-header-text">Megjegyzés</div>
+          <div class="rt-col-megjegyzes rt-header-text">Megj.</div>
           <!-- Actions helyfoglaló -->
           <div class="rt-col-actions"></div>
         </div>
@@ -451,7 +468,7 @@
 import { initDB, saveToIndexedDB } from './db.js';
 import { requireAuth, logout, isAdmin } from './auth.js';
 import {
-  getAllSoforok, getAllProjektek, getAllGepek,
+  getAllSoforok, getAllProjektek, getAllGepek, getAllGepCsoport,
   createNapiTeny, getNapiTenyByDatum, updateNapiTeny, deleteNapiTeny
 } from './crud.js';
 import { getIdentity } from './identity.js';
@@ -464,9 +481,10 @@ const session = requireAuth();
 let currentDate = getTodayStr();
 
 /** Betöltött törzsadatok — csak az aktív session alatt változnak */
-let allSoforok  = [];
+let allSoforok   = [];
 let allProjektek = [];
-let allGepek    = [];
+let allGepek     = [];
+let allCsoportok = [];
 
 /**
  * Sor tömb — minden elem egy ui-row objektum:
@@ -510,10 +528,7 @@ function calcMunkaora(kezd, befejez) {
 
 /** Dátum pill szövegének frissítése */
 function updateDatePill() {
-  const isToday = currentDate === getTodayStr();
-  const dayName = getDayName(currentDate);
-  document.getElementById('currentDatePill').textContent =
-    currentDate + ' — ' + dayName + (isToday ? ' (ma)' : '');
+  document.getElementById('datePicker').value = currentDate;
 }
 
 /** Progress bar és szöveg frissítése a rows tömb alapján */
@@ -598,7 +613,7 @@ function buildRowHTML(row, idx) {
   const inputCell = (colClass, id, val, extra = '', attrs = '') =>
     `<div class="${colClass}"><input class="rt-input ${extra}" id="${id}_${idx}" value="${val != null ? val : ''}" ${attrs} autocomplete="off"></div>`;
 
-  let vallalkozoCell, soforCell, projektCell, gepCell, kezdesCell, befejezCell, munkaCell, fuvarCell, megjCell;
+  let vallalkozoCell, csoportCell, soforCell, projektCell, gepCell, kezdesCell, befejezCell, munkaCell, fuvarCell, megjCell;
 
   // Egyedi vállalkozók listája a selecthez
   const vallalkozok = [...new Set(allGepek.map(g => g.vallalkozo).filter(Boolean))].sort();
@@ -621,13 +636,22 @@ function buildRowHTML(row, idx) {
       </select>
     </div>`;
 
-    // 3. Eszköz — alvállalkozóhoz szűrve
-    gepCell = `<div class="rt-col-gep">
-      <input class="rt-input" id="inp_gep_${idx}" value="${row.gep_nev || ''}"
-        list="gep-list" placeholder="Eszköz…" autocomplete="off">
+    // 3. Csoport select — alvállalkozó után
+    csoportCell = `<div class="rt-col-csoport">
+      <select class="rt-input" id="inp_csoport_${idx}" onchange="handleCsoportChange(${idx})">
+        <option value="">— Csoport —</option>
+        ${allCsoportok.map(c => `<option value="${c.id}"${String(c.id) === String(row.csoport_id || '') ? ' selected' : ''}>${c.nev}</option>`).join('')}
+      </select>
     </div>`;
 
-    // 4. Személy (sofőr)
+    // 4. Eszköz — alvállalkozó ÉS csoport alapján szűrve; letiltva ha nincs csoport
+    const csoportSel = row.csoport_id || '';
+    gepCell = `<div class="rt-col-gep">
+      <input class="rt-input" id="inp_gep_${idx}" value="${row.gep_nev || ''}"
+        list="gep-list" placeholder="Eszköz…" autocomplete="off"${!csoportSel ? ' disabled title="Előbb válassz csoportot!"' : ''}>
+    </div>`;
+
+    // 5. Személy (sofőr)
     soforCell = `<div class="rt-col-sofor">
       <input class="rt-input" id="inp_sofor_${idx}" value="${row.sofor_nev || ''}"
         list="sofor-list" placeholder="Személy neve…" autocomplete="off">
@@ -655,9 +679,10 @@ function buildRowHTML(row, idx) {
         placeholder="Megjegyzés…">
     </div>`;
   } else {
-    // Olvasási mód: szöveges cellák (sorrend: munkaszám, vállalkozó, eszköz, személy)
+    // Olvasási mód: szöveges cellák (sorrend: munkaszám, vállalkozó, csoport, eszköz, személy)
     projektCell    = textCell('rt-col-projekt',    row.projekt_nev);
     vallalkozoCell = textCell('rt-col-vallalkozo', row.vallalkozo);
+    csoportCell    = `<div class="rt-col-csoport"><span class="rt-cell-text">${allCsoportok.find(c => c.id === row.csoport_id)?.nev || '—'}</span></div>`;
     gepCell        = textCell('rt-col-gep',        row.gep_nev);
     soforCell      = textCell('rt-col-sofor',      row.sofor_nev);
     kezdesCell  = textCell('rt-col-kezdes',   row.kezd_idopont);
@@ -673,6 +698,7 @@ function buildRowHTML(row, idx) {
     <div class="rt-badge-slot">${buildBadgeHTML(row.status, idx)}</div>
     ${projektCell}
     ${vallalkozoCell}
+    ${csoportCell}
     ${gepCell}
     ${soforCell}
     ${kezdesCell}
@@ -710,17 +736,48 @@ window.refreshMunkaora = function(idx) {
 };
 
 /**
- * Vállalkozó-váltáskor frissíti a gép datalist-et a kiválasztott vállalkozó alapján.
- * Meghívódik a sor vállalkozó select onchange eseményén.
+ * Vállalkozó-váltáskor törli a csoport és az eszköz értékét az adott sorban,
+ * majd meghívja a handleCsoportChange-t a gép datalist frissítéséhez.
  */
 window.handleVallalkozoChange = function(idx) {
+  // Csoport reset
+  const csoportSel = document.getElementById('inp_csoport_' + idx);
+  if (csoportSel) csoportSel.value = '';
+  // Eszköz reset
+  const gepInput = document.getElementById('inp_gep_' + idx);
+  if (gepInput) gepInput.value = '';
+  // Gép datalist frissítése (vállalkozó+csoport alapján — csoport most üres)
+  handleCsoportChange(idx);
+};
+
+/**
+ * Csoport-váltáskor frissíti a gép datalist-et (alvállalkozó ÉS csoport alapján szűr).
+ * Meghívódik a sor csoport select onchange eseményén.
+ */
+window.handleCsoportChange = function(idx) {
   const vallalkozo = document.getElementById('inp_vallalkozo_' + idx)?.value || '';
-  const szurtGepek = vallalkozo
-    ? allGepek.filter(g => g.vallalkozo === vallalkozo)
-    : allGepek;
+  const csoportId  = document.getElementById('inp_csoport_' + idx)?.value || '';
+  const szurtGepek = allGepek.filter(g =>
+    (!vallalkozo || g.vallalkozo === vallalkozo) &&
+    (!csoportId  || String(g.csoport_id) === csoportId)
+  );
   document.getElementById('gep-list').innerHTML = szurtGepek
     .map(g => `<option value="${[g.tipus, g.rendszam].filter(Boolean).join(' – ')}"></option>`)
     .join('');
+  // Ha az aktuális eszköz érték nem szerepel a szűrt listában, töröljük
+  const gepInput = document.getElementById('inp_gep_' + idx);
+  if (gepInput) {
+    gepInput.disabled = !csoportId;
+    gepInput.title = csoportId ? '' : 'Előbb válassz csoportot!';
+    if (gepInput.value && csoportId) {
+      const ok = szurtGepek.some(g =>
+        [g.tipus, g.rendszam].filter(Boolean).join(' – ') === gepInput.value
+      );
+      if (!ok) gepInput.value = '';
+    } else if (!csoportId) {
+      gepInput.value = '';
+    }
+  }
 };
 
 /**
@@ -736,9 +793,9 @@ window.handleEditRow = function(idx) {
   rows[idx].status = 'editing';
   renderRows();
   // Fókuszt az első inputra állítjuk (kis delay kell a DOM újraépítés miatt)
-  // handleVallalkozoChange frissíti a gep-list datalist-et az aktuális vállalkozóra
+  // handleCsoportChange frissíti a gep-list datalist-et vállalkozó+csoport alapján
   setTimeout(() => {
-    handleVallalkozoChange(idx);
+    handleCsoportChange(idx); // ez vállalkozó+csoport alapján szűr
     document.getElementById('inp_projekt_' + idx)?.focus();
   }, 50);
 };
@@ -780,6 +837,8 @@ window.handleDeleteRow = async function(idx) {
  */
 function readEditingRow(idx) {
   const vallalkozo = document.getElementById('inp_vallalkozo_' + idx)?.value || null;
+  const csoportRaw = document.getElementById('inp_csoport_' + idx)?.value;
+  const csoportId  = csoportRaw ? parseInt(csoportRaw, 10) : null;
   const soforNev   = document.getElementById('inp_sofor_' + idx)?.value?.trim()      || '';
   const projektNev = document.getElementById('inp_projekt_' + idx)?.value?.trim()    || '';
   const gepNev     = document.getElementById('inp_gep_' + idx)?.value?.trim()        || '';
@@ -808,6 +867,7 @@ function readEditingRow(idx) {
     projektNev,
     gepNev,
     vallalkozo,
+    csoport_id:          csoportId,
     sofor_id:            sofor?.id   || null,
     projekt_id:          projekt?.id || null,
     gep_id:              gep?.id     || null,
@@ -838,6 +898,14 @@ async function saveCurrentEditing() {
   // Validáció: sofőr megadása és adatbázis-egyeztetése kötelező
   if (!data.sofor_id) {
     alert('A sofőr neve kötelező és egyeztethetőnek kell lennie az adatbázissal.');
+    return;
+  }
+
+  // Validáció: csoport kiválasztása kötelező az eszköz rögzítéséhez
+  const csoportVal = document.getElementById('inp_csoport_' + idx)?.value;
+  if (!csoportVal) {
+    alert('A csoport kiválasztása kötelező az eszköz rögzítéséhez.');
+    document.getElementById('inp_csoport_' + idx)?.focus();
     return;
   }
 
@@ -902,6 +970,7 @@ async function loadDayData() {
     [allSoforok, allProjektek, allGepek] = await Promise.all([
       getAllSoforok(), getAllProjektek(), getAllGepek()
     ]);
+    allCsoportok = getAllGepCsoport();
     const tenyAdatok = await getNapiTenyByDatum(currentDate);
 
     // Rows összeállítása: az id-kat névvé fordítjuk a törzsadatok alapján
@@ -911,6 +980,7 @@ async function loadDayData() {
       const gep     = allGepek.find(g => g.id === t.gep_id);
       return {
         id:                  t.id,
+        csoport_id:          gep?.csoport_id || null,
         sofor_id:            t.sofor_id,
         sofor_nev:           sofor?.teljes_nev || '—',
         projekt_id:          t.projekt_id,
@@ -936,6 +1006,10 @@ async function loadDayData() {
     updateProgress();
   } catch (e) {
     console.error('[napi_rogzites] Betöltési hiba:', e);
+    rows = [];
+    editingIdx = null;
+    renderRows();
+    updateProgress();
   }
 }
 
@@ -957,20 +1031,30 @@ try {
 
 // ─── Event listener-ek ────────────────────────────────────────────────────────
 
+/** Naptár-alapú dátumválasztó */
+document.getElementById('datePicker').onchange = async () => {
+  const val = document.getElementById('datePicker').value;
+  if (!val) return;
+  currentDate = val;
+  await loadDayData();
+};
+
 /** Előző nap navigáció */
-document.getElementById('btnPrevDay').onclick = () => {
+document.getElementById('btnPrevDay').onclick = async () => {
   const d = new Date(currentDate + 'T00:00:00');
   d.setDate(d.getDate() - 1);
   currentDate = d.toISOString().slice(0, 10);
-  loadDayData();
+  updateDatePill();
+  await loadDayData();
 };
 
 /** Következő nap navigáció */
-document.getElementById('btnNextDay').onclick = () => {
+document.getElementById('btnNextDay').onclick = async () => {
   const d = new Date(currentDate + 'T00:00:00');
   d.setDate(d.getDate() + 1);
   currentDate = d.toISOString().slice(0, 10);
-  loadDayData();
+  updateDatePill();
+  await loadDayData();
 };
 
 /** Új sor hozzáadása — ha van szerkesztés alatt lévő sor, azt előbb elmenti */
@@ -988,12 +1072,14 @@ function addNewRow() {
   rows.push({
     id:                  null,
     status:              'editing',
+    csoport_id:          null,
     sofor_id:            null,
     sofor_nev:           '',
     projekt_id:          null,
     projekt_nev:         '',
     gep_id:              null,
     gep_nev:             '',
+    vallalkozo:          null,
     kezd_idopont:        null,
     befejezes_idopont:   null,
     munkaora:            null,

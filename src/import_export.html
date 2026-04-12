@@ -431,6 +431,15 @@
         </svg>
         Eszközcsoportok
       </a>
+      <a class="nav-item" href="./kompetencia.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Kompetencia
+      </a>
       <div class="nav-divider"></div>
       <!-- Napi rögzítés -->
       <a class="nav-item" href="./napi_rogzites.html">
@@ -692,20 +701,20 @@
         <!-- ── Sablonok panel ── -->
         <div id="panelTorzsSablon" style="display:none">
           <div class="import-section">
-            <h2>Üres sablon letöltése</h2>
+            <h2>Adatok exportálása szerkesztéshez</h2>
             <p style="font-size:13px; color:#7A6F5E; margin:0 0 20px;">
-              Töltsd le az üres Excel sablont, töltsd ki, majd importáld vissza a Sofőr import / Gép import fülön.
+              Letölti az aktuális adatokat id-val együtt. Az <strong>id</strong> oszlop kitöltve = frissítés, üresen hagyva = új rekord. Importáld vissza a Sofőr import / Gép import fülön.
             </p>
             <div class="sablon-cards">
               <div class="sablon-card">
-                <h3>Sofőr sablon</h3>
-                <p>Fejlécek: Teljes név, Aliasok, Belépési dátum, Státusz, Megjegyzés</p>
-                <button class="btn-primary" id="btnDlSoforSablon">Letöltés — sofor_sablon.xlsx</button>
+                <h3>Sofőr adatok exportálása</h3>
+                <p>Oszlopok: id, Teljes név, Aliasok, Belépési dátum, Státusz, Megjegyzés</p>
+                <button class="btn-primary" id="btnDlSoforSablon">Adatok exportálása (szerkesztéshez)</button>
               </div>
               <div class="sablon-card">
-                <h3>Gép sablon</h3>
-                <p>Fejlécek: Rendszám, Típus, Megjegyzés</p>
-                <button class="btn-primary" id="btnDlGepSablon">Letöltés — gep_sablon.xlsx</button>
+                <h3>Gép adatok exportálása</h3>
+                <p>Oszlopok: id, Csoport, Típus, Rendszám, Alvállalkozó, Megjegyzés</p>
+                <button class="btn-primary" id="btnDlGepSablon">Adatok exportálása (szerkesztéshez)</button>
               </div>
             </div>
           </div>
@@ -788,7 +797,7 @@
 <script type="module">
   import { initDB, getDB, saveToIndexedDB, exportDB, importDB } from './db.js';
   import {
-    getAllSoforok, getAllProjektek, getAllGepek,
+    getAllSoforok, getAllProjektek, getAllGepek, getAllGepCsoport,
     createSofor, updateSofor, createGep, updateGep,
   } from './crud.js';
   import { getIdentity } from './identity.js';
@@ -1655,10 +1664,12 @@
     const sheet = workbook.Sheets[sheetName];
     const rows = window.XLSX.utils.sheet_to_json(sheet, { defval: null });
     return rows.map(row => ({
+      id:             findCol(row, ['id']) ? parseInt(findCol(row, ['id']), 10) || null : null,
       teljes_nev:     findCol(row, ['teljes nev','teljesnev','nev','név','sofor','sofőr','driver','name','full name']),
       aliasok:        findCol(row, ['aliasok','alias','becenev','becenév','aliases','rovid','rövid']),
       belepesi_datum: findCol(row, ['belepesi datum','belépési dátum','belepesi_datum','belepés','belépes','start date','hired','datum','dátum']),
       statusz:        findCol(row, ['statusz','státusz','status','allapot','állapot']),
+      beosztas:       findCol(row, ['beosztas','beosztás','role','position']),
       megjegyzes:     findCol(row, ['megjegyzes','megjegyzés','note','comment','megjegyz']),
     })).filter(r => r.teljes_nev);
   }
@@ -1695,13 +1706,14 @@
     const existing = new Set(soforok.map(s => s.teljes_nev.toLowerCase().trim()));
 
     rows.forEach((r, i) => {
-      const isUpdate = existing.has(r.teljes_nev.toLowerCase().trim());
+      const isUpdate = r.id || existing.has(r.teljes_nev.toLowerCase().trim());
       const badge = isUpdate
         ? '<span class="badge-update">Frissítés</span>'
         : '<span class="badge-new">Új</span>';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="text-align:center;"><input type="checkbox" id="soforCb_${i}" checked></td>
+        <td style="font-size:11px; color:#7A6F5E;">${r.id || '—'}</td>
         <td style="font-weight:500;">${escHtml(r.teljes_nev)}</td>
         <td style="font-size:12px; color:#7A6F5E;">${escHtml(r.aliasok||'—')}</td>
         <td style="font-size:12px;">${escHtml(r.belepesi_datum||'—')}</td>
@@ -1722,16 +1734,22 @@
       soforImportRows.forEach((r, i) => {
         const cb = document.getElementById(`soforCb_${i}`);
         if (!cb?.checked) { skipped++; return; }
-        const existing = soforok.find(s => s.teljes_nev.toLowerCase().trim() === r.teljes_nev.toLowerCase().trim());
         const data = {
           teljes_nev:     r.teljes_nev,
           aliasok:        r.aliasok ?? undefined,
           belepesi_datum: r.belepesi_datum ?? undefined,
           statusz:        r.statusz || 'aktiv',
+          beosztas:       r.beosztas ?? undefined,
           megjegyzes:     r.megjegyzes ?? undefined,
         };
-        if (existing) { updateSofor(existing.id, data); updated++; }
-        else { createSofor(data); inserted++; }
+        // ID-alapú upsert: ha van ID, frissítés; különben névegyezés; különben új
+        if (r.id) {
+          updateSofor(r.id, data); updated++;
+        } else {
+          const existing = soforok.find(s => s.teljes_nev.toLowerCase().trim() === r.teljes_nev.toLowerCase().trim());
+          if (existing) { updateSofor(existing.id, data); updated++; }
+          else { createSofor(data); inserted++; }
+        }
       });
       await saveToIndexedDB();
       soforok = getAllSoforok();
@@ -1753,11 +1771,22 @@
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const rows = window.XLSX.utils.sheet_to_json(sheet, { defval: null });
-    return rows.map(row => ({
-      rendszam:   findCol(row, ['rendszam','rendszám','plate','rendszam','jarmszam','járm. szám','rego']),
-      tipus:      findCol(row, ['tipus','típus','type','geptipus','géptípus','jarmu','jármű','vehicle type']),
-      megjegyzes: findCol(row, ['megjegyzes','megjegyzés','note','comment','leiras','leírás']),
-    })).filter(r => r.rendszam);
+    const csoportok = getAllGepCsoport();
+    const csoportMap = new Map(csoportok.map(c => [c.nev.toLowerCase().trim(), c.id]));
+    return rows.map(row => {
+      const csoportNev = findCol(row, ['csoport nev','csoport név','csoport','group','category']);
+      const csoportId  = csoportNev ? (csoportMap.get((csoportNev+'').toLowerCase().trim()) || null) : null;
+      return {
+        id:         findCol(row, ['id']) ? parseInt(findCol(row, ['id']), 10) || null : null,
+        rendszam:   findCol(row, ['rendszam','rendszám','plate','jarmszam','járm. szám','rego']),
+        tipus:      findCol(row, ['tipus','típus','type','geptipus','géptípus','jarmu','jármű','vehicle type']),
+        vallalkozo: findCol(row, ['vallalkozo','alvállalkozó','alvallalkozo','subcontractor','partner']),
+        allapot:    findCol(row, ['allapot','állapot','status','state']) || 'elerheto',
+        csoport_id: csoportId,
+        csoport_nev: csoportNev || null,
+        megjegyzes: findCol(row, ['megjegyzes','megjegyzés','note','comment','leiras','leírás']),
+      };
+    }).filter(r => r.rendszam || r.id);
   }
 
   let gepImportRows = [];
@@ -1790,14 +1819,19 @@
     const existing = new Set(gepek.map(g => (g.rendszam||'').toLowerCase().trim()));
 
     rows.forEach((r, i) => {
-      const isUpdate = existing.has((r.rendszam||'').toLowerCase().trim());
+      const isUpdate = r.id || existing.has((r.rendszam||'').toLowerCase().trim());
       const badge = isUpdate
         ? '<span class="badge-update">Frissítés</span>'
         : '<span class="badge-new">Új</span>';
+      const csoportWarn = r.csoport_nev && !r.csoport_id
+        ? ` <span style="color:var(--color-error);font-size:11px;">(ismeretlen csoport: ${escHtml(r.csoport_nev)})</span>`
+        : '';
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="text-align:center;"><input type="checkbox" id="gepCb_${i}" checked></td>
-        <td style="font-weight:500;">${escHtml(r.rendszam)}</td>
+        <td style="font-size:11px; color:#7A6F5E;">${r.id || '—'}</td>
+        <td style="font-size:12px;">${escHtml(r.csoport_nev||'—')}${csoportWarn}</td>
+        <td style="font-weight:500;">${escHtml(r.rendszam||'—')}</td>
         <td style="font-size:12px;">${escHtml(r.tipus||'—')}</td>
         <td style="font-size:12px; color:#7A6F5E;">${escHtml(r.megjegyzes||'—')}</td>
         <td>${badge}</td>
@@ -1815,10 +1849,22 @@
       gepImportRows.forEach((r, i) => {
         const cb = document.getElementById(`gepCb_${i}`);
         if (!cb?.checked) { skipped++; return; }
-        const existing = gepek.find(g => (g.rendszam||'').toLowerCase().trim() === (r.rendszam||'').toLowerCase().trim());
-        const data = { rendszam: r.rendszam, tipus: r.tipus ?? undefined, megjegyzes: r.megjegyzes ?? undefined };
-        if (existing) { updateGep(existing.id, data); updated++; }
-        else { createGep(data); inserted++; }
+        const data = {
+          rendszam:   r.rendszam ?? undefined,
+          tipus:      r.tipus ?? undefined,
+          vallalkozo: r.vallalkozo ?? undefined,
+          allapot:    r.allapot ?? undefined,
+          csoport_id: r.csoport_id ?? undefined,
+          megjegyzes: r.megjegyzes ?? undefined,
+        };
+        // ID-alapú upsert: ha van ID, frissítés; különben rendszám-egyezés; különben új
+        if (r.id) {
+          updateGep(r.id, data); updated++;
+        } else {
+          const existing = gepek.find(g => (g.rendszam||'').toLowerCase().trim() === (r.rendszam||'').toLowerCase().trim());
+          if (existing) { updateGep(existing.id, data); updated++; }
+          else { createGep(data); inserted++; }
+        }
       });
       await saveToIndexedDB();
       gepek = getAllGepek();
@@ -1837,25 +1883,33 @@
   // ─── Sablon letöltések ───────────────────────────────────────────────────────
 
   document.getElementById('btnDlSoforSablon')?.addEventListener('click', () => {
-    const ws = window.XLSX.utils.aoa_to_sheet([
-      ['Teljes név', 'Aliasok (vesszővel elválasztva)', 'Belépési dátum (ÉÉÉÉ-HH-NN)', 'Státusz (aktiv/inaktiv)', 'Megjegyzés'],
+    const soforok = getAllSoforok();
+    const header = ['id', 'Teljes név', 'Aliasok (vesszővel elválasztva)', 'Belépési dátum (ÉÉÉÉ-HH-NN)', 'Státusz (aktiv/inaktiv)', 'Beosztás', 'Megjegyzés'];
+    const rows = soforok.map(s => [
+      s.id, s.teljes_nev, s.aliasok || '', s.belepesi_datum || '', s.statusz || 'aktiv', s.beosztas || 'sofor', s.megjegyzes || ''
     ]);
-    ws['!cols'] = [{wch:28},{wch:32},{wch:28},{wch:22},{wch:36}];
+    const ws = window.XLSX.utils.aoa_to_sheet([header, ...rows]);
+    ws['!cols'] = [{wch:6},{wch:28},{wch:32},{wch:22},{wch:18},{wch:20},{wch:36}];
     const wb = window.XLSX.utils.book_new();
     window.XLSX.utils.book_append_sheet(wb, ws, 'Sofőrök');
-    window.XLSX.writeFile(wb, 'sofor_sablon.xlsx');
-    flashDownloadBtn(document.getElementById('btnDlSoforSablon'), 'Letöltés — sofor_sablon.xlsx');
+    window.XLSX.writeFile(wb, 'soforok_export.xlsx');
+    flashDownloadBtn(document.getElementById('btnDlSoforSablon'), 'Letöltve!');
   });
 
   document.getElementById('btnDlGepSablon')?.addEventListener('click', () => {
-    const ws = window.XLSX.utils.aoa_to_sheet([
-      ['Rendszám', 'Típus', 'Megjegyzés'],
+    const gepek = getAllGepek();
+    const csoportok = getAllGepCsoport();
+    const csoportMap = new Map(csoportok.map(c => [c.id, c.nev]));
+    const header = ['id', 'Csoport név', 'Típus', 'Rendszám', 'Alvállalkozó', 'Állapot', 'Megjegyzés'];
+    const rows = gepek.map(g => [
+      g.id, csoportMap.get(g.csoport_id) || '', g.tipus || '', g.rendszam || '', g.vallalkozo || '', g.allapot || 'elerheto', g.megjegyzes || ''
     ]);
-    ws['!cols'] = [{wch:16},{wch:28},{wch:40}];
+    const ws = window.XLSX.utils.aoa_to_sheet([header, ...rows]);
+    ws['!cols'] = [{wch:6},{wch:22},{wch:24},{wch:14},{wch:36},{wch:12},{wch:36}];
     const wb = window.XLSX.utils.book_new();
     window.XLSX.utils.book_append_sheet(wb, ws, 'Gépek');
-    window.XLSX.writeFile(wb, 'gep_sablon.xlsx');
-    flashDownloadBtn(document.getElementById('btnDlGepSablon'), 'Letöltés — gep_sablon.xlsx');
+    window.XLSX.writeFile(wb, 'gepek_export.xlsx');
+    flashDownloadBtn(document.getElementById('btnDlGepSablon'), 'Letöltve!');
   });
 
   // Drop zone-ok inicializálása (csak ha admin)
