@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Napi rögzítés | Pilot Erőforrás</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared.css" />
+  <style>
+    /* ─── Dátumnavigátor ──────────────────────────────────────────────────── */
+    .date-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 16px;
+    }
+    .date-nav-btn {
+      background: #F5F4F1;
+      border: 1px solid #E8E6E1;
+      border-radius: 5px;
+      padding: 6px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    .date-nav-btn:hover {
+      background: #EDEBE6;
+      border-color: #C8C4BC;
+    }
+    .date-picker-input {
+      border: 1.5px solid #2D6A4F;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: 'Inter', system-ui;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1A1C1E;
+      background: #fff;
+      cursor: pointer;
+      outline: none;
+      height: 34px;
+      box-sizing: border-box;
+    }
+    .date-picker-input:hover { border-color: #245c44; }
+    .date-picker-input:focus { border-color: #1a4a35; box-shadow: 0 0 0 2px rgba(45,106,79,.15); }
+
+    /* ─── Progress ────────────────────────────────────────────────────────── */
+    .progress-area {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      margin-right: 12px;
+    }
+    .progress-text {
+      font-family: 'Inter', system-ui;
+      font-size: 12px;
+      font-weight: 500;
+      color: #7A6F5E;
+    }
+    .progress-track {
+      width: 120px;
+      height: 4px;
+      border-radius: 2px;
+      background: #E8E6E1;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 4px;
+      border-radius: 2px;
+      background: #2D6A4F;
+      transition: width 0.3s;
+    }
+
+    /* ─── Rögzítés tartalom ───────────────────────────────────────────────── */
+    .rogzites-content {
+      padding: 20px 32px;
+      gap: 12px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    /* ─── Rögzítés táblázat ───────────────────────────────────────────────── */
+    .rogzites-table {
+      background: #FFFFFF;
+      border: 1px solid #E8E6E1;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .rt-header {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      gap: 8px;
+      background: #FAFAF8;
+      border-bottom: 1px solid #E8E6E1;
+      min-height: 41px;
+    }
+    .rt-row {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      gap: 8px;
+      border-bottom: 1px solid #F0EEE9;
+      min-height: 41px;
+    }
+    .rt-row:last-child {
+      border-bottom: none;
+    }
+    .rt-row--done {
+      background: #FAFDFB;
+    }
+    .rt-row--editing {
+      background: #FFFFFF;
+      box-shadow: inset 0 0 0 2px #2D6A4F;
+      border-bottom: 1px solid #C5DDD1 !important;
+      border-radius: 4px;
+      min-height: 55px;
+    }
+    .rt-row--incomplete {
+      background: #FDF8F7;
+    }
+
+    /* ─── Badge ───────────────────────────────────────────────────────────── */
+    .rt-badge-slot {
+      width: 28px;
+      min-width: 28px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .rt-badge {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', system-ui;
+      font-size: 10px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .rt-badge--done      { background: #2D6A4F; color: #FFFFFF; }
+    .rt-badge--editing   { background: #E8E6E1; color: #7A6F5E; }
+    .rt-badge--incomplete{ background: #F5DDD9; color: #C0392B; font-weight: 700; }
+
+    /* ─── Oszlop szélességek ──────────────────────────────────────────────── */
+    .rt-col-vallalkozo { flex: 1.4; min-width: 0; }
+    .rt-col-csoport    { flex: 1.4; min-width: 0; }
+    .rt-col-sofor      { flex: 1.8; min-width: 0; }
+    .rt-col-projekt    { flex: 1.8; min-width: 0; }
+    .rt-col-gep        { flex: 1.4; min-width: 0; }
+    .rt-col-kezdes     { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
+    .rt-col-befejez    { width: 72px; min-width: 72px; flex-shrink: 0; text-align: center; }
+    .rt-col-munkaora   { width: 64px; min-width: 64px; flex-shrink: 0; text-align: center; }
+    .rt-col-fuvarok    { width: 64px; min-width: 64px; flex-shrink: 0; text-align: center; }
+    .rt-col-megjegyzes { flex: 1.2; min-width: 0; }
+    .rt-col-actions    { width: 32px; min-width: 32px; flex-shrink: 0; display: flex; justify-content: flex-end; }
+
+    /* ─── Cellák ──────────────────────────────────────────────────────────── */
+    .rt-cell-text {
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 20px;
+      color: #000000;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+    }
+    .rt-input {
+      background: #F5F4F1;
+      border: 1px solid #C5DDD1;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 20px;
+      color: #000000;
+      width: 100%;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .rt-input:focus {
+      border: 1.5px solid #2D6A4F;
+      background: #FFFFFF;
+    }
+    .rt-input--time   { text-align: center; }
+    .rt-input--number { text-align: center; }
+
+    /* ─── Header szöveg ───────────────────────────────────────────────────── */
+    .rt-header-text {
+      font-family: system-ui, sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      color: #7A6F5E;
+    }
+
+    /* ─── Sor hozzáadás gomb ──────────────────────────────────────────────── */
+    .add-row-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #FAFAF8;
+      border: 1.5px dashed #C8C4BC;
+      border-radius: 8px;
+      padding: 12px 16px;
+      cursor: pointer;
+      width: 100%;
+      font-family: 'Inter', system-ui;
+      font-size: 13px;
+      font-weight: 500;
+      color: #7A6F5E;
+    }
+    .add-row-btn:hover {
+      border-color: #2D6A4F;
+      color: #2D6A4F;
+    }
+  </style>
+</head>
+<body id="appRoot">
+
+<div class="app-layout">
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div>
+        <div class="brand-label">Pilot</div>
+        <div class="brand-name">Erőforrás</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- Dashboard -->
+      <a class="nav-item" href="./index.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        Dashboard
+      </a>
+      <!-- Sofőrök -->
+      <a class="nav-item" href="./soforok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Sofőrök
+      </a>
+      <!-- Projektek -->
+      <a class="nav-item" href="./projektek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Projektek
+      </a>
+      <!-- Gépek -->
+      <a class="nav-item" href="./gepek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="6" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M11 8h2.5l1 2.5V12h-3.5V8z" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="4" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+          <circle cx="11.5" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        Gépek
+      </a>
+      <!-- Vállalkozók -->
+      <a class="nav-item" href="./vallalkozok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 9h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Vállalkozók
+      </a>
+      <!-- Eszközcsoportok -->
+      <a class="nav-item" href="./gep_csoportok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Eszközcsoportok
+      </a>
+      <a class="nav-item" href="./kompetencia.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Kompetencia
+      </a>
+      <div class="nav-divider"></div>
+      <!-- Napi rögzítés — aktív -->
+      <a class="nav-item active" href="./napi_rogzites.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5.5 10.5l1.5 1.5 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Napi rögzítés
+      </a>
+      <!-- Napi tervezés -->
+      <a class="nav-item" href="./napi_tervezes.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 10h6M5 12.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Napi tervezés
+      </a>
+      <!-- Távollétek -->
+      <a class="nav-item" href="./tavolletek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 10l6 0M5 12.5l4 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="1.5 1.5"/>
+        </svg>
+        Távollétek
+      </a>
+      <!-- Import / Export -->
+      <a class="nav-item" href="./import_export.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Import / Export
+      </a>
+      <!-- Beállítások -->
+      <a class="nav-item" href="./settings.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        Beállítások
+      </a>
+      <!-- Admin panel (csak adminoknak látható) -->
+      <div id="navAdminItem" style="display:none">
+        <a class="nav-item" href="./admin.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Admin panel
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user-info" id="sidebarUserInfo">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <span id="sidebarUserName">—</span>
+      </div>
+      <button class="nav-item nav-item--danger" id="btnLogout">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Kijelentkezés
+      </button>
+    </div>
+  </aside>
+
+  <!-- ─── Fő tartalom ──────────────────────────────────────────────────────── -->
+  <div class="main-content">
+
+    <!-- ─── Page Header ─────────────────────────────────────────────────────── -->
+    <header class="page-header" style="justify-content: space-between;">
+
+      <!-- Bal: cím + dátumnavigátor -->
+      <div style="display: flex; align-items: center;">
+        <div class="page-header-left">
+          <h1 class="page-title">Napi rögzítés</h1>
+        </div>
+        <div class="date-nav">
+          <button class="date-nav-btn" id="btnPrevDay" title="Előző nap">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M9 3L5 7l4 4" stroke="#7A6F5E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <input type="date" class="date-picker-input" id="datePicker" title="Kattints a naptárra">
+          <button class="date-nav-btn" id="btnNextDay" title="Következő nap">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M5 3l4 4-4 4" stroke="#7A6F5E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Jobb: progress + mentés gomb -->
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="progress-area">
+          <span class="progress-text" id="progressText">0 / 0 rögzítve</span>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill" style="width: 0px;"></div>
+          </div>
+        </div>
+        <button class="btn-primary" id="btnSaveAll">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7l3.5 3.5L12 3" stroke="#E9F5EE" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Mentés
+        </button>
+      </div>
+    </header>
+
+    <!-- ─── Rögzítés tartalom ─────────────────────────────────────────────── -->
+    <div class="rogzites-content">
+
+      <!-- Táblázat -->
+      <div class="rogzites-table" id="rogzitesTable">
+
+        <!-- Fejléc sor -->
+        <div class="rt-header">
+          <!-- Badge helyfoglaló -->
+          <div class="rt-badge-slot"></div>
+          <div class="rt-col-projekt    rt-header-text">Munkaszám</div>
+          <div class="rt-col-vallalkozo rt-header-text">Alvállalkozó</div>
+          <div class="rt-col-csoport   rt-header-text">Csoport</div>
+          <div class="rt-col-gep        rt-header-text">Eszköz</div>
+          <div class="rt-col-sofor      rt-header-text">Személy</div>
+          <div class="rt-col-kezdes  rt-header-text" style="text-align:center;">Kezdés</div>
+          <div class="rt-col-befejez rt-header-text" style="text-align:center;">Bef.</div>
+          <div class="rt-col-munkaora rt-header-text" style="text-align:center;">Óra</div>
+          <div class="rt-col-fuvarok  rt-header-text" style="text-align:center;">Fuvar</div>
+          <div class="rt-col-megjegyzes rt-header-text">Megj.</div>
+          <!-- Actions helyfoglaló -->
+          <div class="rt-col-actions"></div>
+        </div>
+
+        <!-- Sorok konténere — JS tölti fel -->
+        <div id="rowContainer"></div>
+      </div>
+
+      <!-- Új sor hozzáadása gomb -->
+      <button class="add-row-btn" id="btnAddRow">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        Új sor hozzáadása
+      </button>
+
+    </div><!-- /.rogzites-content -->
+
+  </div><!-- /.main-content -->
+</div><!-- /.app-layout -->
+
+<!-- Datalist-ek az autocomplete-hez -->
+<datalist id="sofor-list"></datalist>
+<datalist id="projekt-list"></datalist>
+<datalist id="gep-list"></datalist>
+
+<!-- sql.js CDN -->
+<script type="module">
+import {
+  requireAuth, logout, isAdmin, getUser, saveToIndexedDB,
+  getAllSoforok, getAllProjektek, getAllGepek, getAllGepCsoport,
+  createNapiTeny, getNapiTenyByDatum, updateNapiTeny, deleteNapiTeny,
+} from './api.js';
+
+requireAuth();
+
+// ─── Állapot ──────────────────────────────────────────────────────────────────
+
+/** Az aktuálisan megjelenített nap ISO dátum string-je (pl. '2026-04-03') */
+let currentDate = getTodayStr();
+
+/** Betöltött törzsadatok — csak az aktív session alatt változnak */
+let allSoforok   = [];
+let allProjektek = [];
+let allGepek     = [];
+let allCsoportok = [];
+
+/**
+ * Sor tömb — minden elem egy ui-row objektum:
+ * { id, sofor_id, sofor_nev, projekt_id, projekt_nev, gep_id, gep_nev,
+ *   kezd_idopont, befejezes_idopont, munkaora, fuvarok_szama, megjegyzes,
+ *   status: 'done' | 'editing' | 'incomplete' }
+ */
+let rows = [];
+
+/** A jelenleg szerkesztett sor indexe, vagy null ha nincs szerkesztés */
+let editingIdx = null;
+
+// ─── Segédfüggvények ──────────────────────────────────────────────────────────
+
+/** Mai napot ISO string-ként adja vissza */
+function getTodayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Magyar napnév az ISO dátum alapján */
+function getDayName(dateStr) {
+  const days = ['vasárnap', 'hétfő', 'kedd', 'szerda', 'csütörtök', 'péntek', 'szombat'];
+  // new Date('2026-04-03') lokálisan értelmezi — explicit UTC-ből hozunk létre hogy ne csússzon el
+  const d = new Date(dateStr + 'T00:00:00');
+  return days[d.getDay()];
+}
+
+/**
+ * Munkaórát számol két HH:MM string-ből.
+ * Negatív vagy nulla különbség esetén '—' -t ad vissza.
+ */
+function calcMunkaora(kezd, befejez) {
+  if (!kezd || !befejez) return '—';
+  const [kh, km] = kezd.split(':').map(Number);
+  const [bh, bm] = befejez.split(':').map(Number);
+  const diff = (bh * 60 + bm) - (kh * 60 + km);
+  return diff > 0 ? (diff / 60).toFixed(2) : '—';
+}
+
+// ─── UI frissítések ───────────────────────────────────────────────────────────
+
+/** Dátum pill szövegének frissítése */
+function updateDatePill() {
+  document.getElementById('datePicker').value = currentDate;
+}
+
+/** Progress bar és szöveg frissítése a rows tömb alapján */
+function updateProgress() {
+  const done  = rows.filter(r => r.status === 'done').length;
+  const total = rows.length;
+  document.getElementById('progressText').textContent = done + ' / ' + total + ' rögzítve';
+  const pct = total > 0 ? done / total : 0;
+  document.getElementById('progressFill').style.width = Math.round(pct * 120) + 'px';
+}
+
+/** Datalist elemek frissítése — sofőr, projekt, gép (inicializáláskor mind) */
+function updateDatalistOptions() {
+  // Csak aktív sofőrök jelennek meg az autocomplete-ben
+  const soforList = document.getElementById('sofor-list');
+  soforList.innerHTML = allSoforok
+    .filter(s => s.statusz === 'aktiv')
+    .map(s => `<option value="${s.teljes_nev}"></option>`)
+    .join('');
+
+  const projektList = document.getElementById('projekt-list');
+  projektList.innerHTML = allProjektek
+    .map(p => `<option value="${p.munkaszam}"></option>`)
+    .join('');
+
+  // Inicializáláskor az összes géppel töltjük fel a datalist-et
+  document.getElementById('gep-list').innerHTML = allGepek
+    .map(g => `<option value="${[g.tipus, g.rendszam].filter(Boolean).join(' – ')}"></option>`)
+    .join('');
+}
+
+// ─── HTML builder-ek ──────────────────────────────────────────────────────────
+
+/** Badge HTML az állapot szerint (done = pipa, editing = sorszám, incomplete = !) */
+function buildBadgeHTML(status, idx) {
+  if (status === 'done') {
+    return `<div class="rt-badge rt-badge--done">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <path d="M1.5 5l2.5 2.5 4.5-5" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>`;
+  }
+  if (status === 'editing') {
+    return `<div class="rt-badge rt-badge--editing">${idx + 1}</div>`;
+  }
+  // incomplete
+  return `<div class="rt-badge rt-badge--incomplete">!</div>`;
+}
+
+/** Action gomb HTML: editing = X (törlés), egyéb = ceruza (szerkesztés) */
+function buildActionHTML(status, idx) {
+  if (status === 'editing') {
+    // X gomb — törli a sort (ha van db id-ja, megerősítés után)
+    return `<button class="action-btn action-btn--delete" onclick="handleDeleteRow(${idx})" title="Törlés">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M2 2l10 10M12 2L2 12" stroke="#C0392B" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+    </button>`;
+  }
+  // Ceruza gomb — szín az állapot szerint (piros ha incomplete, zöld ha done)
+  const stroke = status === 'incomplete' ? '#C0392B' : '#2D6A4F';
+  return `<button class="action-btn action-btn--edit" onclick="handleEditRow(${idx})" title="Szerkesztés">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M9.5 2.5l2 2-7 7H2.5v-2l7-7z" stroke="${stroke}" stroke-width="1.4" stroke-linejoin="round"/>
+    </svg>
+  </button>`;
+}
+
+/**
+ * Egy sor teljes HTML-jét állítja össze.
+ * Szerkesztési módban input mezők, egyébként csak szöveg.
+ */
+function buildRowHTML(row, idx) {
+  const isEditing = row.status === 'editing';
+  const rowClass  = 'rt-row rt-row--' + row.status;
+
+  // Segéd: sima szöveges cella
+  const textCell = (colClass, val) =>
+    `<div class="${colClass}"><span class="rt-cell-text">${val || '—'}</span></div>`;
+
+  // Segéd: input cella
+  const inputCell = (colClass, id, val, extra = '', attrs = '') =>
+    `<div class="${colClass}"><input class="rt-input ${extra}" id="${id}_${idx}" value="${val != null ? val : ''}" ${attrs} autocomplete="off"></div>`;
+
+  let vallalkozoCell, csoportCell, soforCell, projektCell, gepCell, kezdesCell, befejezCell, munkaCell, fuvarCell, megjCell;
+
+  // Egyedi vállalkozók listája a selecthez
+  const vallalkozok = [...new Set(allGepek.map(g => g.vallalkozo).filter(Boolean))].sort();
+
+  if (isEditing) {
+    // 1. Munkaszám
+    projektCell = `<div class="rt-col-projekt">
+      <input class="rt-input" id="inp_projekt_${idx}" value="${row.projekt_nev || ''}"
+        list="projekt-list" placeholder="Munkaszám…" autocomplete="off">
+    </div>`;
+
+    // 2. Alvállalkozó select
+    const vallalkozoOptions = vallalkozok
+      .map(v => `<option value="${v}"${v === (row.vallalkozo || '') ? ' selected' : ''}>${v}</option>`)
+      .join('');
+    vallalkozoCell = `<div class="rt-col-vallalkozo">
+      <select class="rt-input" id="inp_vallalkozo_${idx}" onchange="handleVallalkozoChange(${idx})">
+        <option value="">— Válassz —</option>
+        ${vallalkozoOptions}
+      </select>
+    </div>`;
+
+    // 3. Csoport select — alvállalkozó után
+    csoportCell = `<div class="rt-col-csoport">
+      <select class="rt-input" id="inp_csoport_${idx}" onchange="handleCsoportChange(${idx})">
+        <option value="">— Csoport —</option>
+        ${allCsoportok.map(c => `<option value="${c.id}"${String(c.id) === String(row.csoport_id || '') ? ' selected' : ''}>${c.nev}</option>`).join('')}
+      </select>
+    </div>`;
+
+    // 4. Eszköz — alvállalkozó ÉS csoport alapján szűrve; letiltva ha nincs csoport
+    const csoportSel = row.csoport_id || '';
+    gepCell = `<div class="rt-col-gep">
+      <input class="rt-input" id="inp_gep_${idx}" value="${row.gep_nev || ''}"
+        list="gep-list" placeholder="Eszköz…" autocomplete="off"${!csoportSel ? ' disabled title="Előbb válassz csoportot!"' : ''}>
+    </div>`;
+
+    // 5. Személy (sofőr)
+    soforCell = `<div class="rt-col-sofor">
+      <input class="rt-input" id="inp_sofor_${idx}" value="${row.sofor_nev || ''}"
+        list="sofor-list" placeholder="Személy neve…" autocomplete="off">
+    </div>`;
+    kezdesCell = `<div class="rt-col-kezdes">
+      <input class="rt-input rt-input--time" id="inp_kezdes_${idx}" type="time"
+        value="${row.kezd_idopont || ''}" oninput="refreshMunkaora(${idx})">
+    </div>`;
+    befejezCell = `<div class="rt-col-befejez">
+      <input class="rt-input rt-input--time" id="inp_befejez_${idx}" type="time"
+        value="${row.befejezes_idopont || ''}" oninput="refreshMunkaora(${idx})">
+    </div>`;
+    // Munkaóra szerkesztés közben számolt, nem input
+    munkaCell = `<div class="rt-col-munkaora">
+      <span class="rt-cell-text" id="calc_munkaora_${idx}" style="display:block;text-align:center;">
+        ${calcMunkaora(row.kezd_idopont, row.befejezes_idopont)}
+      </span>
+    </div>`;
+    fuvarCell = `<div class="rt-col-fuvarok">
+      <input class="rt-input rt-input--number" id="inp_fuvarok_${idx}" type="number"
+        min="0" value="${row.fuvarok_szama != null ? row.fuvarok_szama : ''}">
+    </div>`;
+    megjCell = `<div class="rt-col-megjegyzes">
+      <input class="rt-input" id="inp_megjegyzes_${idx}" value="${row.megjegyzes || ''}"
+        placeholder="Megjegyzés…">
+    </div>`;
+  } else {
+    // Olvasási mód: szöveges cellák (sorrend: munkaszám, vállalkozó, csoport, eszköz, személy)
+    projektCell    = textCell('rt-col-projekt',    row.projekt_nev);
+    vallalkozoCell = textCell('rt-col-vallalkozo', row.vallalkozo);
+    csoportCell    = `<div class="rt-col-csoport"><span class="rt-cell-text">${allCsoportok.find(c => c.id === row.csoport_id)?.nev || '—'}</span></div>`;
+    gepCell        = textCell('rt-col-gep',        row.gep_nev);
+    soforCell      = textCell('rt-col-sofor',      row.sofor_nev);
+    kezdesCell  = textCell('rt-col-kezdes',   row.kezd_idopont);
+    befejezCell = textCell('rt-col-befejez',  row.befejezes_idopont);
+    munkaCell   = textCell('rt-col-munkaora', row.munkaora != null ? row.munkaora : '—');
+    fuvarCell   = textCell('rt-col-fuvarok',  row.fuvarok_szama);
+    // Incomplete soroknál a megjegyzés helyén utalás jelenik meg, ha nincs megjegyzés
+    const megjSzoveg = row.megjegyzes || (row.status === 'incomplete' ? 'Rögzítés hiányzik' : '');
+    megjCell = textCell('rt-col-megjegyzes', megjSzoveg);
+  }
+
+  return `<div class="${rowClass}" data-idx="${idx}">
+    <div class="rt-badge-slot">${buildBadgeHTML(row.status, idx)}</div>
+    ${projektCell}
+    ${vallalkozoCell}
+    ${csoportCell}
+    ${gepCell}
+    ${soforCell}
+    ${kezdesCell}
+    ${befejezCell}
+    ${munkaCell}
+    ${fuvarCell}
+    ${megjCell}
+    <div class="rt-col-actions">${buildActionHTML(row.status, idx)}</div>
+  </div>`;
+}
+
+/** A rowContainer-t újrarajzolja a rows tömb alapján */
+function renderRows() {
+  const container = document.getElementById('rowContainer');
+  if (rows.length === 0) {
+    container.innerHTML = `<div style="padding:20px 16px;color:#A09688;font-size:13px;font-family:Inter,system-ui">
+      Erre a napra még nincs rögzített adat. Kattints a "+ Új sor hozzáadása" gombra.
+    </div>`;
+    return;
+  }
+  container.innerHTML = rows.map((r, i) => buildRowHTML(r, i)).join('');
+}
+
+// ─── Globális event handler-ek (onclick-ből hívódnak) ────────────────────────
+
+/**
+ * Munkaóra újraszámítása szerkesztés közben.
+ * Meghívódik minden time input oninput eseményén.
+ */
+window.refreshMunkaora = function(idx) {
+  const k  = document.getElementById('inp_kezdes_' + idx)?.value;
+  const b  = document.getElementById('inp_befejez_' + idx)?.value;
+  const el = document.getElementById('calc_munkaora_' + idx);
+  if (el) el.textContent = calcMunkaora(k, b);
+};
+
+/**
+ * Vállalkozó-váltáskor törli a csoport és az eszköz értékét az adott sorban,
+ * majd meghívja a handleCsoportChange-t a gép datalist frissítéséhez.
+ */
+window.handleVallalkozoChange = function(idx) {
+  // Csoport reset
+  const csoportSel = document.getElementById('inp_csoport_' + idx);
+  if (csoportSel) csoportSel.value = '';
+  // Eszköz reset
+  const gepInput = document.getElementById('inp_gep_' + idx);
+  if (gepInput) gepInput.value = '';
+  // Gép datalist frissítése (vállalkozó+csoport alapján — csoport most üres)
+  handleCsoportChange(idx);
+};
+
+/**
+ * Csoport-váltáskor frissíti a gép datalist-et (alvállalkozó ÉS csoport alapján szűr).
+ * Meghívódik a sor csoport select onchange eseményén.
+ */
+window.handleCsoportChange = function(idx) {
+  const vallalkozo = document.getElementById('inp_vallalkozo_' + idx)?.value || '';
+  const csoportId  = document.getElementById('inp_csoport_' + idx)?.value || '';
+  const szurtGepek = allGepek.filter(g =>
+    (!vallalkozo || g.vallalkozo === vallalkozo) &&
+    (!csoportId  || String(g.csoport_id) === csoportId)
+  );
+  document.getElementById('gep-list').innerHTML = szurtGepek
+    .map(g => `<option value="${[g.tipus, g.rendszam].filter(Boolean).join(' – ')}"></option>`)
+    .join('');
+  // Ha az aktuális eszköz érték nem szerepel a szűrt listában, töröljük
+  const gepInput = document.getElementById('inp_gep_' + idx);
+  if (gepInput) {
+    gepInput.disabled = !csoportId;
+    gepInput.title = csoportId ? '' : 'Előbb válassz csoportot!';
+    if (gepInput.value && csoportId) {
+      const ok = szurtGepek.some(g =>
+        [g.tipus, g.rendszam].filter(Boolean).join(' – ') === gepInput.value
+      );
+      if (!ok) gepInput.value = '';
+    } else if (!csoportId) {
+      gepInput.value = '';
+    }
+  }
+};
+
+/**
+ * Szerkesztési mód aktiválása egy adott sorra.
+ * Ha másik sor épp szerkesztés alatt áll, azt előbb elmenti.
+ */
+window.handleEditRow = function(idx) {
+  if (editingIdx !== null && editingIdx !== idx) {
+    // Másik sor szerkesztésének mentése — async, de nem várjuk meg a renderig
+    saveCurrentEditing();
+  }
+  editingIdx = idx;
+  rows[idx].status = 'editing';
+  renderRows();
+  // Fókuszt az első inputra állítjuk (kis delay kell a DOM újraépítés miatt)
+  // handleCsoportChange frissíti a gep-list datalist-et vállalkozó+csoport alapján
+  setTimeout(() => {
+    handleCsoportChange(idx); // ez vállalkozó+csoport alapján szűr
+    document.getElementById('inp_projekt_' + idx)?.focus();
+  }, 50);
+};
+
+/**
+ * Sor törlése — ha már el volt mentve az adatbázisba, megerősítést kér.
+ */
+window.handleDeleteRow = async function(idx) {
+  const row = rows[idx];
+  if (row.id) {
+    if (!confirm('Biztosan törli ezt a sort?')) return;
+    try {
+      await deleteNapiTeny(row.id);
+    } catch (e) {
+      console.error('[napi_rogzites] Törlési hiba:', e);
+      alert('Törlési hiba: ' + e.message);
+      return;
+    }
+  }
+  rows.splice(idx, 1);
+  // editingIdx karbantartása a törlés után
+  if (editingIdx === idx) {
+    editingIdx = null;
+  } else if (editingIdx !== null && editingIdx > idx) {
+    editingIdx--;
+  }
+  renderRows();
+  updateProgress();
+};
+
+// ─── Input kiolvasás ──────────────────────────────────────────────────────────
+
+/**
+ * Az éppen szerkesztett sor input értékeit olvassa ki.
+ * A sofőr/projekt/gép id-ját az allSoforok stb. tömbökből vezeti le.
+ *
+ * @param {number} idx - A szerkesztett sor indexe
+ * @returns {object} Az összegyűjtött mezők
+ */
+function readEditingRow(idx) {
+  const vallalkozo = document.getElementById('inp_vallalkozo_' + idx)?.value || null;
+  const csoportRaw = document.getElementById('inp_csoport_' + idx)?.value;
+  const csoportId  = csoportRaw ? parseInt(csoportRaw, 10) : null;
+  const soforNev   = document.getElementById('inp_sofor_' + idx)?.value?.trim()      || '';
+  const projektNev = document.getElementById('inp_projekt_' + idx)?.value?.trim()    || '';
+  const gepNev     = document.getElementById('inp_gep_' + idx)?.value?.trim()        || '';
+  const kezdes     = document.getElementById('inp_kezdes_' + idx)?.value             || null;
+  const befejez    = document.getElementById('inp_befejez_' + idx)?.value            || null;
+  const fuvarokRaw = document.getElementById('inp_fuvarok_' + idx)?.value;
+  const fuvarok    = fuvarokRaw !== '' && fuvarokRaw != null ? parseInt(fuvarokRaw) : null;
+  const megjegyzes = document.getElementById('inp_megjegyzes_' + idx)?.value?.trim() || null;
+
+  // Törzsadatok lookup — pontosan egyező névre keresünk
+  const sofor   = allSoforok.find(s => s.teljes_nev === soforNev);
+  const projekt = allProjektek.find(p => p.munkaszam === projektNev);
+
+  // Gép keresés: a megjelenített string "Típus – Rendszám" formátumú
+  const gep = allGepek.find(g =>
+    [g.tipus, g.rendszam].filter(Boolean).join(' – ') === gepNev
+  );
+
+  // Munkaóra számítás (ha mindkét időpont megvan)
+  const munkaoraSzam = (kezdes && befejez)
+    ? (parseFloat(calcMunkaora(kezdes, befejez)) || null)
+    : null;
+
+  return {
+    soforNev,
+    projektNev,
+    gepNev,
+    vallalkozo,
+    csoport_id:          csoportId,
+    sofor_id:            sofor?.id   || null,
+    projekt_id:          projekt?.id || null,
+    gep_id:              gep?.id     || null,
+    kezd_idopont:        kezdes,
+    befejezes_idopont:   befejez,
+    munkaora:            munkaoraSzam,
+    fuvarok_szama:       fuvarok,
+    megjegyzes,
+    // Megjelenítési mezők (a rows-ban tárolt nevek)
+    sofor_nev:           soforNev,
+    projekt_nev:         projektNev,
+    gep_nev:             gepNev,
+  };
+}
+
+// ─── Mentés ───────────────────────────────────────────────────────────────────
+
+/**
+ * Az aktuálisan szerkesztett sort elmenti az adatbázisba.
+ * Validál, duplikátumot ellenőriz, majd create/update hív.
+ * Mentés után a sor 'done' státuszra vált.
+ */
+async function saveCurrentEditing() {
+  if (editingIdx === null) return;
+  const idx  = editingIdx;
+  const data = readEditingRow(idx);
+
+  // Validáció: sofőr megadása és adatbázis-egyeztetése kötelező
+  if (!data.sofor_id) {
+    alert('A sofőr neve kötelező és egyeztethetőnek kell lennie az adatbázissal.');
+    return;
+  }
+
+  // Validáció: csoport kiválasztása kötelező az eszköz rögzítéséhez
+  const csoportVal = document.getElementById('inp_csoport_' + idx)?.value;
+  if (!csoportVal) {
+    alert('A csoport kiválasztása kötelező az eszköz rögzítéséhez.');
+    document.getElementById('inp_csoport_' + idx)?.focus();
+    return;
+  }
+
+  // Duplikátum ellenőrzés: ugyanaz a sofőr + projekt már szerepel-e a napban?
+  const isDup = rows.some((r, i) =>
+    i !== idx &&
+    r.status === 'done' &&
+    r.sofor_id  === data.sofor_id &&
+    r.projekt_id === data.projekt_id
+  );
+  if (isDup) {
+    if (!confirm('Ez a sofőr erre a napra és projektre már rögzítve van. Folytatja?')) return;
+  }
+
+  // Adatbázis rekord felkészítése
+  const dbData = {
+    datum:               currentDate,
+    sofor_id:            data.sofor_id,
+    projekt_id:          data.projekt_id,
+    gep_id:              data.gep_id,
+    kezd_idopont:        data.kezd_idopont,
+    befejezes_idopont:   data.befejezes_idopont,
+    munkaora:            data.munkaora,
+    fuvarok_szama:       data.fuvarok_szama,
+    megjegyzes:          data.megjegyzes,
+    allapot:             'rogzitett',
+    forras:              'manualis',
+  };
+
+  try {
+    let savedId = rows[idx].id;
+    if (savedId) {
+      // Már létező rekord frissítése
+      await updateNapiTeny(savedId, dbData);
+    } else {
+      // Új rekord létrehozása
+      const newId = await createNapiTeny(dbData);
+      savedId = (typeof newId === 'object' ? newId?.id : newId) || null;
+    }
+
+    // Sor állapotának frissítése 'done'-ra
+    rows[idx] = { ...data, id: savedId, status: 'done' };
+    editingIdx = null;
+    renderRows();
+    updateProgress();
+  } catch (e) {
+    console.error('[napi_rogzites] Mentési hiba:', e);
+    alert('Hiba a mentés során: ' + e.message);
+  }
+}
+
+// ─── Adatbetöltés ─────────────────────────────────────────────────────────────
+
+/**
+ * Az aktuális nap adatait tölti be.
+ * Párhuzamosan kéri le a törzsadatokat és a napi tényeket,
+ * majd összeállítja a rows tömböt és újrarajzolja az UI-t.
+ */
+async function loadDayData() {
+  try {
+    // Törzsadatok és napi tények párhuzamos betöltése
+    [allSoforok, allProjektek, allGepek, allCsoportok] = await Promise.all([
+      getAllSoforok(), getAllProjektek(), getAllGepek(), getAllGepCsoport()
+    ]);
+    const tenyAdatok = await getNapiTenyByDatum(currentDate);
+
+    // Rows összeállítása: az id-kat névvé fordítjuk a törzsadatok alapján
+    rows = tenyAdatok.map(t => {
+      const sofor   = allSoforok.find(s => s.id === t.sofor_id);
+      const projekt = allProjektek.find(p => p.id === t.projekt_id);
+      const gep     = allGepek.find(g => g.id === t.gep_id);
+      return {
+        id:                  t.id,
+        csoport_id:          gep?.csoport_id || null,
+        sofor_id:            t.sofor_id,
+        sofor_nev:           sofor?.teljes_nev || '—',
+        projekt_id:          t.projekt_id,
+        projekt_nev:         projekt?.munkaszam || '',
+        gep_id:              t.gep_id,
+        gep_nev:             gep ? [gep.tipus, gep.rendszam].filter(Boolean).join(' – ') : '',
+        // Vállalkozót a gép objektumból deriváljuk (nem tárolódik a napi_teny-ben)
+        vallalkozo:          gep?.vallalkozo || null,
+        kezd_idopont:        t.kezd_idopont,
+        befejezes_idopont:   t.befejezes_idopont,
+        munkaora:            t.munkaora,
+        fuvarok_szama:       t.fuvarok_szama,
+        megjegyzes:          t.megjegyzes,
+        // Ha van sofőr id, a sor kész ('done'); ha nincs, hiányos ('incomplete')
+        status:              t.sofor_id ? 'done' : 'incomplete',
+      };
+    });
+
+    editingIdx = null;
+    updateDatalistOptions();
+    updateDatePill();
+    renderRows();
+    updateProgress();
+  } catch (e) {
+    console.error('[napi_rogzites] Betöltési hiba:', e);
+    rows = [];
+    editingIdx = null;
+    renderRows();
+    updateProgress();
+  }
+}
+
+// ─── Inicializálás ────────────────────────────────────────────────────────────
+
+// Sidebar felhasználónév feltöltése
+document.getElementById('sidebarUserName').textContent = getUser()?.nev || getUser()?.felhasznalonev || '—';
+if (isAdmin()) document.getElementById('navAdminItem').style.display = '';
+document.getElementById('btnLogout').addEventListener('click', () => logout());
+
+try {
+  await loadDayData();
+} catch (e) {
+  // API hiba esetén hibaüzenetet mutatunk az egész oldal helyett
+  document.getElementById('appRoot').innerHTML =
+    `<div class="error-banner">Betöltési hiba — töltsd újra az oldalt. (${e.message})</div>`;
+}
+
+// ─── Event listener-ek ────────────────────────────────────────────────────────
+
+/** Naptár-alapú dátumválasztó */
+document.getElementById('datePicker').onchange = async () => {
+  const val = document.getElementById('datePicker').value;
+  if (!val) return;
+  currentDate = val;
+  await loadDayData();
+};
+
+/** Előző nap navigáció */
+document.getElementById('btnPrevDay').onclick = async () => {
+  const d = new Date(currentDate + 'T00:00:00');
+  d.setDate(d.getDate() - 1);
+  currentDate = d.toISOString().slice(0, 10);
+  updateDatePill();
+  await loadDayData();
+};
+
+/** Következő nap navigáció */
+document.getElementById('btnNextDay').onclick = async () => {
+  const d = new Date(currentDate + 'T00:00:00');
+  d.setDate(d.getDate() + 1);
+  currentDate = d.toISOString().slice(0, 10);
+  updateDatePill();
+  await loadDayData();
+};
+
+/** Új sor hozzáadása — ha van szerkesztés alatt lévő sor, azt előbb elmenti */
+document.getElementById('btnAddRow').onclick = () => {
+  if (editingIdx !== null) {
+    // saveCurrentEditing aszinkron — megvárjuk mielőtt új sort adunk hozzá
+    saveCurrentEditing().then(() => addNewRow());
+  } else {
+    addNewRow();
+  }
+};
+
+/** Üres új sort szúr be a rows tömbébe és azonnal szerkesztési módra állítja */
+function addNewRow() {
+  rows.push({
+    id:                  null,
+    status:              'editing',
+    csoport_id:          null,
+    sofor_id:            null,
+    sofor_nev:           '',
+    projekt_id:          null,
+    projekt_nev:         '',
+    gep_id:              null,
+    gep_nev:             '',
+    vallalkozo:          null,
+    kezd_idopont:        null,
+    befejezes_idopont:   null,
+    munkaora:            null,
+    fuvarok_szama:       null,
+    megjegyzes:          null,
+  });
+  editingIdx = rows.length - 1;
+  renderRows();
+  // Fókusz az első inputra (kis delay kell a DOM-hoz)
+  setTimeout(() => document.getElementById('inp_projekt_' + editingIdx)?.focus(), 50);
+}
+
+/**
+ * Mentés gomb — elmenti a szerkesztett sort (ha van), majd
+ * az IndexedDB-be is perzisztálja a teljes adatbázist.
+ * Rövid vizuális visszajelzést ad a gombra.
+ */
+document.getElementById('btnSaveAll').onclick = async () => {
+  if (editingIdx !== null) {
+    await saveCurrentEditing();
+  }
+  await saveToIndexedDB();
+
+  // Vizuális visszajelzés: gomb szövege és háttere pár másodpercre megváltozik
+  const btn  = document.getElementById('btnSaveAll');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '&#10003; Mentve!';
+  btn.style.background = '#1a5a40';
+  setTimeout(() => {
+    btn.innerHTML       = orig;
+    btn.style.background = '';
+  }, 2000);
+};
+</script>
+</body>
+</html>

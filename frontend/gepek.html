@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gépek | Pilot Erőforrás</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared.css" />
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div>
+        <div class="brand-label">Pilot</div>
+        <div class="brand-name">Erőforrás</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- Dashboard -->
+      <a class="nav-item" href="./index.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        Dashboard
+      </a>
+      <!-- Sofőrök -->
+      <a class="nav-item" href="./soforok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Sofőrök
+      </a>
+      <!-- Projektek -->
+      <a class="nav-item" href="./projektek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Projektek
+      </a>
+      <!-- Gépek — aktív -->
+      <a class="nav-item active" href="./gepek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="6" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M11 8h2.5l1 2.5V12h-3.5V8z" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="4" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+          <circle cx="11.5" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        Gépek
+      </a>
+      <!-- Vállalkozók -->
+      <a class="nav-item" href="./vallalkozok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 9h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Vállalkozók
+      </a>
+      <!-- Eszközcsoportok -->
+      <a class="nav-item" href="./gep_csoportok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Eszközcsoportok
+      </a>
+      <a class="nav-item" href="./kompetencia.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Kompetencia
+      </a>
+      <div class="nav-divider"></div>
+      <!-- Napi rögzítés -->
+      <a class="nav-item" href="./napi_rogzites.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5.5 10.5l1.5 1.5 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Napi rögzítés
+      </a>
+      <!-- Napi tervezés -->
+      <a class="nav-item" href="./napi_tervezes.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 10h6M5 12.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Napi tervezés
+      </a>
+      <!-- Távollétek -->
+      <a class="nav-item" href="./tavolletek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 10l6 0M5 12.5l4 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="1.5 1.5"/>
+        </svg>
+        Távollétek
+      </a>
+      <!-- Import / Export -->
+      <a class="nav-item" href="./import_export.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Import / Export
+      </a>
+      <!-- Beállítások -->
+      <a class="nav-item" href="./settings.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        Beállítások
+      </a>
+      <!-- Admin panel (csak adminoknak látható) -->
+      <div id="navAdminItem" style="display:none">
+        <a class="nav-item" href="./admin.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Admin panel
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user-info" id="sidebarUserInfo">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <span id="sidebarUserName">—</span>
+      </div>
+      <button class="nav-item nav-item--danger" id="btnLogout">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Kijelentkezés
+      </button>
+    </div>
+  </aside>
+
+  <!-- ─── Fő tartalom ──────────────────────────────────────────────────────── -->
+  <div class="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="page-header-left">
+        <h1 class="page-title">Gépek</h1>
+        <div class="page-subtitle"><span id="subtitle">Betöltés...</span></div>
+      </div>
+      <div class="page-header-right">
+        <div class="search-input">
+          <input type="text" id="searchInput" placeholder="Keresés típus vagy rendszám..." />
+        </div>
+        <button class="btn-primary" id="btnNew">+ Új gép</button>
+      </div>
+    </header>
+
+    <!-- Szűrő tabok -->
+    <div class="filter-tabs">
+      <div class="filter-tab filter-tab--active" id="filterAll">
+        Összes <span class="tab-count" id="countAll">0</span>
+      </div>
+      <div class="filter-tab" id="filterAvailable">
+        Elérhető <span class="tab-count" id="countAvailable">0</span>
+      </div>
+      <div class="filter-tab" id="filterService">
+        Szerviz <span class="tab-count" id="countService">0</span>
+      </div>
+      <div class="filter-tab" id="filterRetired">
+        Kivont <span class="tab-count" id="countRetired">0</span>
+      </div>
+      <div style="margin-left:auto; display:flex; align-items:center;">
+        <select id="filterCsoport" class="form-select" style="width:200px; height:34px; font-size:13px;">
+          <option value="">Összes csoport</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Tartalomterület -->
+    <div class="content-area">
+
+      <!-- Táblázat -->
+      <div class="table-container" id="tableContainer">
+        <div class="table-header-row">
+          <div style="width:48px; flex-shrink:0;"></div>
+          <div style="flex:2.5; min-width:0;">Csoport / Típus · Rendszám</div>
+          <div style="flex:2; min-width:0;">Alvállalkozó</div>
+          <div style="width:110px; flex-shrink:0;">Állapot</div>
+          <div style="width:80px; flex-shrink:0;"></div>
+        </div>
+        <div id="tableBody"></div>
+      </div>
+
+      <!-- Form panel -->
+      <div class="form-panel" id="formPanel" style="display:none;">
+        <div class="form-panel-header">
+          <span class="form-panel-title" id="formTitle">Új gép</span>
+          <button class="action-btn" id="btnPanelClose" title="Bezárás">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="form-panel-body">
+          <div class="form-field">
+            <label class="form-label" for="inputCsoport">Csoport <span style="color:var(--color-error)">*</span></label>
+            <select class="form-select" id="inputCsoport" required>
+              <option value="">— Válassz csoportot —</option>
+            </select>
+            <span class="form-error" id="errorCsoport">A csoport megadása kötelező.</span>
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="inputTipus">Típus / Megnevezés <span style="color:var(--color-error)">*</span></label>
+            <input class="form-input" type="text" id="inputTipus" placeholder="pl. Liebherr LTM 1050" />
+            <span class="form-error" id="errorTipus">A típus megadása kötelező.</span>
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="inputRendszam">Rendszám</label>
+            <input class="form-input" type="text" id="inputRendszam" placeholder="pl. ABC-123" style="font-family:'Courier New',monospace; letter-spacing:0.05em;" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="inputVallalkozo">Alvállalkozó <span style="color:var(--color-error)">*</span></label>
+            <input class="form-input" type="text" id="inputVallalkozo" placeholder="pl. Zöld Út Fuvarozó és Szolgáltató Kft." list="vallalkozo-list" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="inputMegjegyzes">Megjegyzés</label>
+            <input class="form-input" type="text" id="inputMegjegyzes" placeholder="Opcionális megjegyzés" />
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="inputAllapot">Állapot</label>
+            <select class="form-select" id="inputAllapot">
+              <option value="elerheto">Elérhető</option>
+              <option value="szerviz">Szerviz</option>
+              <option value="kivont">Kivont</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-panel-footer">
+          <button class="btn-secondary" id="btnCancel">Mégse</button>
+          <button class="btn-primary" id="btnSave">Mentés</button>
+        </div>
+      </div>
+
+    </div><!-- /.content-area -->
+
+  </div><!-- /.main-content -->
+</div><!-- /.app-layout -->
+
+<datalist id="vallalkozo-list"></datalist>
+<script type="module">
+  import {
+    requireAuth, logout, isAdmin, getUser, saveToIndexedDB,
+    getAllGepek, createGep, updateGep, deleteGep, getAllGepCsoport,
+  } from './api.js';
+
+  requireAuth();
+
+  // ─── SVG teherautó ikon stroke színek állapot szerint ───────────────────────
+  const ICON_COLORS = {
+    elerheto: '#2D6A4F',
+    szerviz:  '#E8A030',
+    kivont:   '#A09688',
+  };
+
+  // ─── Állapot ────────────────────────────────────────────────────────────────
+
+  let currentFilter = 'all';  // 'all' | 'elerheto' | 'szerviz' | 'kivont'
+  let editingId     = null;
+  let allGepek      = [];
+  let allCsoportok  = [];
+  let filterText    = '';
+
+  // ─── Inicializálás ──────────────────────────────────────────────────────────
+
+  // Sidebar felhasználónév feltöltése
+  document.getElementById('sidebarUserName').textContent = getUser()?.nev || getUser()?.felhasznalonev || '—';
+  if (isAdmin()) document.getElementById('navAdminItem').style.display = '';
+  document.getElementById('btnLogout').addEventListener('click', () => logout());
+
+  try {
+    allCsoportok = await getAllGepCsoport();
+    await loadAndRender();
+    // Szerkesztési gombok elrejtése nem-admin felhasználóknak
+    if (!isAdmin()) {
+      document.getElementById('btnNew').style.display = 'none';
+    }
+  } catch (err) {
+    document.querySelector('.content-area').innerHTML =
+      '<div class="error-banner">Betöltési hiba — töltsd újra az oldalt</div>';
+    console.error('[gepek] init hiba:', err);
+  }
+
+  // ─── Adatbetöltés ───────────────────────────────────────────────────────────
+
+  async function loadAndRender() {
+    [allGepek, allCsoportok] = await Promise.all([getAllGepek(), getAllGepCsoport()]);
+    updateCounts();
+    renderTable();
+    updateVallalkozoDatalist();
+    refreshCsoportSelect();
+  }
+
+  function refreshCsoportSelect() {
+    // Form select (kötelező mezőként — nincs "Nincs megadva" opció)
+    const sel     = document.getElementById('inputCsoport');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Válassz csoportot —</option>' +
+      allCsoportok.map(c => `<option value="${c.id}">${escHtml(c.nev)}</option>`).join('');
+    sel.value = current;
+
+    // Szűrő select (filterCsoport — tartalmaz "Összes csoport" opciót)
+    const filterSel     = document.getElementById('filterCsoport');
+    const filterCurrent = filterSel ? filterSel.value : '';
+    if (filterSel) {
+      filterSel.innerHTML = '<option value="">Összes csoport</option>' +
+        allCsoportok.map(c => `<option value="${c.id}">${escHtml(c.nev)}</option>`).join('');
+      filterSel.value = filterCurrent;
+    }
+  }
+
+  function updateVallalkozoDatalist() {
+    const vallalkozok = [...new Set(allGepek.map(g => g.vallalkozo).filter(Boolean))].sort();
+    document.getElementById('vallalkozo-list').innerHTML =
+      vallalkozok.map(v => `<option value="${v}"></option>`).join('');
+  }
+
+  function updateCounts() {
+    const total    = allGepek.length;
+    const elerheto = allGepek.filter(g => (g.allapot || 'elerheto') === 'elerheto').length;
+    const szerviz  = allGepek.filter(g => g.allapot === 'szerviz').length;
+    const kivont   = allGepek.filter(g => g.allapot === 'kivont').length;
+
+    document.getElementById('countAll').textContent       = total;
+    document.getElementById('countAvailable').textContent = elerheto;
+    document.getElementById('countService').textContent   = szerviz;
+    document.getElementById('countRetired').textContent   = kivont;
+    document.getElementById('subtitle').textContent       = `${total} gép összesen`;
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+
+    // Szűrés állapot alapján
+    let filtered = allGepek.filter(g => {
+      const al = g.allapot || 'elerheto';
+      if (currentFilter === 'elerheto') return al === 'elerheto';
+      if (currentFilter === 'szerviz')  return al === 'szerviz';
+      if (currentFilter === 'kivont')   return al === 'kivont';
+      return true;
+    });
+
+    // Keresés típusban VAGY rendszámban (OR logika)
+    if (filterText) {
+      const q = filterText.toLowerCase();
+      filtered = filtered.filter(g =>
+        (g.tipus    || '').toLowerCase().includes(q) ||
+        (g.rendszam || '').toLowerCase().includes(q)
+      );
+    }
+
+    // Csoport szűrő
+    const csoportFilterVal = document.getElementById('filterCsoport')?.value || '';
+    if (csoportFilterVal) {
+      const csoportId = parseInt(csoportFilterVal, 10);
+      filtered = filtered.filter(g => g.csoport_id === csoportId);
+    }
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<div class="table-empty">Nincs megjeleníthető gép.</div>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(g => createRowHTML(g)).join('');
+  }
+
+  // ─── Sor HTML generálás ──────────────────────────────────────────────────────
+
+  function createRowHTML(gep) {
+    const allapot = gep.allapot || 'elerheto';
+
+    // Sor stílus
+    let rowClass = 'table-row';
+    if (allapot === 'szerviz') rowClass = 'table-row table-row--warning';
+    if (allapot === 'kivont')  rowClass = 'table-row table-row--inactive';
+
+    // Badge
+    let badgeClass, badgeText;
+    if (allapot === 'elerheto') { badgeClass = 'badge badge--elerheto'; badgeText = 'Elérhető'; }
+    else if (allapot === 'szerviz') { badgeClass = 'badge badge--szerviz'; badgeText = 'Szerviz'; }
+    else { badgeClass = 'badge badge--kivont'; badgeText = 'Kivont'; }
+
+    // Ikon box stílus
+    let iconBoxClass = 'machine-icon-box';
+    if (allapot === 'elerheto') iconBoxClass += ' machine-icon-box--available';
+    else if (allapot === 'szerviz') iconBoxClass += ' machine-icon-box--service';
+    else iconBoxClass += ' machine-icon-box--retired';
+
+    // SVG stroke szín
+    const strokeColor = ICON_COLORS[allapot] || ICON_COLORS.elerheto;
+
+    // Action gomb disabled állapot
+    const btnDisabled = allapot === 'kivont' ? 'action-btn--disabled' : '';
+
+    // SVG teherautó ikon
+    const truckSvg = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="6" width="10" height="6" rx="1" stroke="${strokeColor}" stroke-width="1.4"/>
+      <path d="M11 8h2.5l1 2.5V12h-3.5V8z" stroke="${strokeColor}" stroke-width="1.4"/>
+      <circle cx="4" cy="12" r="1.2" stroke="${strokeColor}" stroke-width="1.2"/>
+      <circle cx="11.5" cy="12" r="1.2" stroke="${strokeColor}" stroke-width="1.2"/>
+    </svg>`;
+
+    const csoport = allCsoportok.find(c => c.id === gep.csoport_id);
+
+    // Típus + rendszám összefűzve alsor szövegnek
+    const tipusRendszam = [gep.tipus, gep.rendszam].filter(Boolean).join(' · ');
+
+    return `
+      <div class="${rowClass}" data-id="${gep.id}">
+        <div style="width:48px; flex-shrink:0; display:flex; align-items:center;">
+          <div class="${iconBoxClass}">${truckSvg}</div>
+        </div>
+        <div style="flex:2.5; min-width:0;">
+          <div style="font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            ${csoport ? escHtml(csoport.nev) : '<span style="color:var(--color-text-muted); font-weight:400;">— Nincs csoport —</span>'}
+          </div>
+          ${tipusRendszam ? `<div style="font-size:11px; color:var(--color-text-muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escHtml(tipusRendszam)}</div>` : ''}
+        </div>
+        <div style="flex:2; min-width:0; color:var(--color-text-secondary); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          ${escHtml(gep.vallalkozo || '—')}
+        </div>
+        <div style="width:110px; flex-shrink:0;">
+          <span class="${badgeClass}">${badgeText}</span>
+        </div>
+        <div style="width:80px; flex-shrink:0; display:flex; align-items:center; justify-content:flex-end; gap:4px;">
+          ${isAdmin() ? `
+          <button class="action-btn action-btn--edit ${btnDisabled}" title="Szerkesztés" onclick="handleEdit(${gep.id})">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9.5 2.5l2 2L4 12H2v-2l7.5-7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="action-btn action-btn--delete ${btnDisabled}" title="Törlés" onclick="handleDelete(${gep.id})">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 3.5h10M5 3.5V2h4v1.5M5.5 6v4M8.5 6v4M3 3.5l.7 8h6.6l.7-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  // ─── Form kezelés ────────────────────────────────────────────────────────────
+
+  function openNewForm() {
+    editingId = null;
+    document.getElementById('formTitle').textContent     = 'Új gép';
+    document.getElementById('inputTipus').value          = '';
+    document.getElementById('inputRendszam').value       = '';
+    document.getElementById('inputVallalkozo').value     = 'Zöld Út Fuvarozó és Szolgáltató Kft.';
+    document.getElementById('inputCsoport').value        = '';
+    document.getElementById('inputMegjegyzes').value     = '';
+    document.getElementById('inputAllapot').value        = 'elerheto';
+    document.getElementById('formPanel').style.display   = 'flex';
+    document.getElementById('inputTipus').focus();
+  }
+
+  function openEditForm(id) {
+    const gep = allGepek.find(g => g.id === id);
+    if (!gep) return;
+
+    editingId = id;
+    document.getElementById('formTitle').textContent     = 'Szerkesztés';
+    document.getElementById('inputTipus').value          = gep.tipus      || '';
+    document.getElementById('inputRendszam').value       = gep.rendszam   || '';
+    document.getElementById('inputVallalkozo').value     = gep.vallalkozo || '';
+    document.getElementById('inputCsoport').value        = gep.csoport_id || '';
+    document.getElementById('inputMegjegyzes').value     = gep.megjegyzes || '';
+    document.getElementById('inputAllapot').value        = gep.allapot    || 'elerheto';
+    document.getElementById('formPanel').style.display   = 'flex';
+    document.getElementById('inputTipus').focus();
+  }
+
+  function closeForm() {
+    document.getElementById('formPanel').style.display = 'none';
+    editingId = null;
+  }
+
+  // ─── Mentés ──────────────────────────────────────────────────────────────────
+
+  async function handleSave() {
+    const csoportRawCheck = document.getElementById('inputCsoport').value;
+    if (!csoportRawCheck) {
+      const sel = document.getElementById('inputCsoport');
+      sel.focus();
+      sel.style.borderColor = 'var(--color-error)';
+      document.getElementById('errorCsoport').classList.add('visible');
+      return;
+    }
+
+    const tipus = document.getElementById('inputTipus').value.trim();
+    if (!tipus) {
+      const input = document.getElementById('inputTipus');
+      input.focus();
+      input.style.borderColor = 'var(--color-error)';
+      document.getElementById('errorTipus').classList.add('visible');
+      return;
+    }
+
+    const allapotVal  = document.getElementById('inputAllapot').value;
+    const rendszam    = document.getElementById('inputRendszam').value.trim() || null;
+    const vallalkozo  = document.getElementById('inputVallalkozo').value.trim() || null;
+    const megjegyzes  = document.getElementById('inputMegjegyzes').value.trim() || null;
+    const csoportRaw  = document.getElementById('inputCsoport').value;
+    const csoport_id  = csoportRaw ? parseInt(csoportRaw, 10) : null;
+
+    try {
+      if (editingId !== null) {
+        await updateGep(editingId, {
+          tipus:      tipus,
+          rendszam:   rendszam,
+          vallalkozo: vallalkozo,
+          megjegyzes: megjegyzes,
+          csoport_id: csoport_id,
+          allapot:    allapotVal,
+        });
+      } else {
+        await createGep({
+          tipus:      tipus,
+          rendszam:   rendszam,
+          vallalkozo: vallalkozo,
+          megjegyzes: megjegyzes,
+          csoport_id: csoport_id,
+          allapot:    allapotVal,
+        });
+      }
+      await saveToIndexedDB();
+      closeForm();
+      await loadAndRender();
+    } catch (err) {
+      alert('Hiba a mentés során: ' + err.message);
+    }
+  }
+
+  // ─── Törlés ──────────────────────────────────────────────────────────────────
+
+  async function handleDelete(id) {
+    if (!confirm('Biztosan törli ezt a gépet?')) return;
+    try {
+      await deleteGep(id);
+      await saveToIndexedDB();
+      if (editingId === id) closeForm();
+      await loadAndRender();
+    } catch (err) {
+      alert('Törlési hiba: ' + err.message);
+    }
+  }
+
+  // ─── Globális handlerek ──────────────────────────────────────────────────────
+
+  window.handleEdit   = (id) => openEditForm(id);
+  window.handleDelete = (id) => handleDelete(id);
+
+  // ─── Eseménykezelők ──────────────────────────────────────────────────────────
+
+  document.getElementById('btnNew').onclick        = () => openNewForm();
+  document.getElementById('btnSave').onclick       = () => handleSave();
+  document.getElementById('btnCancel').onclick     = () => closeForm();
+  document.getElementById('btnPanelClose').onclick = () => closeForm();
+
+  // Hibajelzés törlése gépeléskor / váltáskor
+  document.getElementById('inputTipus').oninput = () => {
+    document.getElementById('inputTipus').style.borderColor = '';
+    document.getElementById('errorTipus').classList.remove('visible');
+  };
+
+  document.getElementById('inputCsoport').onchange = () => {
+    document.getElementById('inputCsoport').style.borderColor = '';
+    document.getElementById('errorCsoport').classList.remove('visible');
+  };
+
+  document.getElementById('searchInput').oninput = (e) => {
+    filterText = e.target.value.trim();
+    renderTable();
+  };
+
+  document.getElementById('filterCsoport').onchange = () => {
+    renderTable();
+  };
+
+  document.getElementById('filterAll').onclick       = () => setFilter('all');
+  document.getElementById('filterAvailable').onclick = () => setFilter('elerheto');
+  document.getElementById('filterService').onclick   = () => setFilter('szerviz');
+  document.getElementById('filterRetired').onclick   = () => setFilter('kivont');
+
+  function setFilter(f) {
+    currentFilter = f;
+    document.getElementById('filterAll').className       = 'filter-tab' + (f === 'all'      ? ' filter-tab--active' : '');
+    document.getElementById('filterAvailable').className = 'filter-tab' + (f === 'elerheto' ? ' filter-tab--active' : '');
+    document.getElementById('filterService').className   = 'filter-tab' + (f === 'szerviz'  ? ' filter-tab--active' : '');
+    document.getElementById('filterRetired').className   = 'filter-tab' + (f === 'kivont'   ? ' filter-tab--active' : '');
+    renderTable();
+  }
+
+  // ─── Segédfüggvény ───────────────────────────────────────────────────────────
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>

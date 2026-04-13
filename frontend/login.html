@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bejelentkezés | Pilot Erőforrás</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared.css" />
+  <style>
+    /* ─── Bejelentkezési oldal layout ─────────────────────────────────────── */
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--color-bg);
+    }
+
+    .login-wrap {
+      width: 100%;
+      max-width: 400px;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    /* ─── Brand fejléc ────────────────────────────────────────────────────── */
+    .login-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      text-align: center;
+    }
+
+    .login-brand__icon {
+      width: 48px;
+      height: 48px;
+      background: var(--color-accent);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .login-brand__label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-accent);
+    }
+
+    .login-brand__name {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--color-text-primary);
+    }
+
+    /* ─── Bejelentkezési kártya ───────────────────────────────────────────── */
+    .login-card {
+      width: 100%;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(26, 28, 30, 0.08);
+      overflow: hidden;
+    }
+
+    .login-card__header {
+      padding: 24px 28px 20px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .login-card__title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      letter-spacing: -0.01em;
+      margin: 0 0 4px;
+    }
+
+    .login-card__subtitle {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+
+    .login-card__body {
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* ─── Form mezők ──────────────────────────────────────────────────────── */
+    .login-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .login-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-text-secondary);
+    }
+
+    .login-input {
+      height: 42px;
+      padding: 0 14px;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--color-text-primary);
+      background: var(--color-surface);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      width: 100%;
+    }
+
+    .login-input::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    .login-input:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.12);
+    }
+
+    /* ─── Hibaüzenet ──────────────────────────────────────────────────────── */
+    .login-error {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: #fdecea;
+      color: var(--color-error);
+      border: 1px solid rgba(192, 57, 43, 0.2);
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .login-error.visible {
+      display: flex;
+    }
+
+    /* ─── Submit gomb ─────────────────────────────────────────────────────── */
+    .login-submit {
+      width: 100%;
+      height: 42px;
+      background: var(--color-accent);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.12s, opacity 0.12s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .login-submit:hover {
+      background: #245a41;
+    }
+
+    .login-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* ─── Footer szöveg ───────────────────────────────────────────────────── */
+    .login-footer {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-wrap">
+
+  <!-- Brand fejléc -->
+  <div class="login-brand">
+    <div class="login-brand__icon">
+      <!-- Pilot ikon: navigációs iránytű -->
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="9" stroke="#FFFFFF" stroke-width="1.8"/>
+        <path d="M16.24 7.76l-2.83 5.66-5.66 2.83 2.83-5.66 5.66-2.83z" fill="#FFFFFF"/>
+        <circle cx="12" cy="12" r="1.5" fill="#2D6A4F"/>
+      </svg>
+    </div>
+    <div class="login-brand__label">Pilot</div>
+    <div class="login-brand__name">Erőforrás</div>
+  </div>
+
+  <!-- Bejelentkezési kártya -->
+  <div class="login-card">
+    <div class="login-card__header">
+      <h1 class="login-card__title">Bejelentkezés</h1>
+      <p class="login-card__subtitle">Adja meg felhasználónevét és jelszavát</p>
+    </div>
+
+    <div class="login-card__body">
+
+      <!-- Hibaüzenet (JS tölti be) -->
+      <div class="login-error" id="loginError">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
+          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        <span id="loginErrorText"></span>
+      </div>
+
+      <!-- Bejelentkezési form -->
+      <form id="loginForm" autocomplete="off">
+
+        <div style="display:flex; flex-direction:column; gap:18px;">
+          <!-- Felhasználónév -->
+          <div class="login-field">
+            <label class="login-label" for="inputFelhasznalonev">Felhasználónév</label>
+            <input
+              class="login-input"
+              type="text"
+              id="inputFelhasznalonev"
+              name="felhasznalonev"
+              placeholder="Felhasználónév"
+              autocomplete="username"
+              required
+            />
+          </div>
+
+          <!-- Jelszó -->
+          <div class="login-field">
+            <label class="login-label" for="inputJelszo">Jelszó</label>
+            <input
+              class="login-input"
+              type="password"
+              id="inputJelszo"
+              name="jelszo"
+              placeholder="Jelszó"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="login-submit" id="btnLogin">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 15 12 10 7"/>
+              <line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            Bejelentkezés
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <div class="login-footer">Pilot Erőforrás — backend alkalmazás</div>
+
+</div>
+
+<script type="module">
+  import { login, getToken } from './api.js';
+
+  // ─── Ha már be van jelentkezve, azonnal az indexre irányítjuk ───────────────
+  if (getToken()) {
+    window.location.replace('./index.html');
+  }
+
+  // ─── Bejelentkezési form kezelése ───────────────────────────────────────────
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const felhasznalonev = document.getElementById('inputFelhasznalonev').value.trim();
+    const jelszo         = document.getElementById('inputJelszo').value;
+
+    if (!felhasznalonev || !jelszo) {
+      showError('Kérjük, töltsd ki az összes mezőt.');
+      return;
+    }
+
+    const btn = document.getElementById('btnLogin');
+    btn.disabled = true;
+    btn.textContent = 'Bejelentkezés…';
+
+    try {
+      await login(felhasznalonev, jelszo);
+      window.location.replace('./index.html');
+    } catch (err) {
+      showError(err.message || 'Bejelentkezési hiba történt.');
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/>
+          <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+        Bejelentkezés
+      `;
+    }
+  });
+
+  // ─── Segédfüggvény ──────────────────────────────────────────────────────────
+  function showError(message) {
+    const errorDiv  = document.getElementById('loginError');
+    const errorText = document.getElementById('loginErrorText');
+    errorText.textContent = message;
+    errorDiv.classList.add('visible');
+  }
+</script>
+</body>
+</html>

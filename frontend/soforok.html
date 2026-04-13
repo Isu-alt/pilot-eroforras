@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sofőrök | Pilot Erőforrás</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./shared.css" />
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ─── Sidebar ─────────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div>
+        <div class="brand-label">Pilot</div>
+        <div class="brand-name">Erőforrás</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- Dashboard -->
+      <a class="nav-item" href="./index.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/>
+        </svg>
+        Dashboard
+      </a>
+      <!-- Sofőrök — aktív -->
+      <a class="nav-item active" href="./soforok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Sofőrök
+      </a>
+      <!-- Projektek -->
+      <a class="nav-item" href="./projektek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Projektek
+      </a>
+      <!-- Gépek -->
+      <a class="nav-item" href="./gepek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="6" width="10" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M11 8h2.5l1 2.5V12h-3.5V8z" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="4" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+          <circle cx="11.5" cy="12" r="1.2" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        Gépek
+      </a>
+      <!-- Vállalkozók -->
+      <a class="nav-item" href="./vallalkozok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="4" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 9h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Vállalkozók
+      </a>
+      <!-- Eszközcsoportok -->
+      <a class="nav-item" href="./gep_csoportok.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 4h12M2 8h8M2 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Eszközcsoportok
+      </a>
+      <a class="nav-item" href="./kompetencia.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M9 12h6M12 9v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Kompetencia
+      </a>
+      <div class="nav-divider"></div>
+      <!-- Napi rögzítés -->
+      <a class="nav-item" href="./napi_rogzites.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5.5 10.5l1.5 1.5 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Napi rögzítés
+      </a>
+      <!-- Napi tervezés -->
+      <a class="nav-item" href="./napi_tervezes.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 10h6M5 12.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        Napi tervezés
+      </a>
+      <!-- Távollétek -->
+      <a class="nav-item" href="./tavolletek.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 1v3M11 1v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <path d="M2 7h12" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M5 10l6 0M5 12.5l4 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-dasharray="1.5 1.5"/>
+        </svg>
+        Távollétek
+      </a>
+      <!-- Import / Export -->
+      <a class="nav-item" href="./import_export.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 12h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        Import / Export
+      </a>
+      <!-- Beállítások -->
+      <a class="nav-item" href="./settings.html">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        Beállítások
+      </a>
+      <!-- Admin panel (csak adminoknak látható) -->
+      <div id="navAdminItem" style="display:none">
+        <a class="nav-item" href="./admin.html">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Admin panel
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user-info" id="sidebarUserInfo">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <span id="sidebarUserName">—</span>
+      </div>
+      <button class="nav-item nav-item--danger" id="btnLogout">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Kijelentkezés
+      </button>
+    </div>
+  </aside>
+
+  <!-- ─── Fő tartalom ──────────────────────────────────────────────────────── -->
+  <div class="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="page-header-left">
+        <h1 class="page-title">Sofőrök</h1>
+        <div class="page-subtitle"><span id="subtitle">Betöltés...</span></div>
+      </div>
+      <div class="page-header-right">
+        <div class="search-input">
+          <input type="text" id="searchInput" placeholder="Keresés névben..." />
+        </div>
+        <button class="btn-primary" id="btnNew">+ Új sofőr</button>
+      </div>
+    </header>
+
+    <!-- Szűrő tabok -->
+    <div class="filter-tabs">
+      <div class="filter-tab filter-tab--active" id="filterAll">
+        Összes <span class="tab-count" id="countAll">0</span>
+      </div>
+      <div class="filter-tab" id="filterActive">
+        Aktív <span class="tab-count" id="countActive">0</span>
+      </div>
+      <div class="filter-tab" id="filterInactive">
+        Inaktív <span class="tab-count" id="countInactive">0</span>
+      </div>
+    </div>
+
+    <!-- Tartalomterület: táblázat + form panel -->
+    <div class="content-area">
+
+      <!-- Táblázat -->
+      <div class="table-container" id="tableContainer">
+        <!-- Fejléc sor -->
+        <div class="table-header-row">
+          <div style="width:32px; flex-shrink:0;"></div>
+          <div style="flex:2; min-width:0;">Név</div>
+          <div style="width:100px; flex-shrink:0;">Státusz</div>
+          <div style="width:130px; flex-shrink:0;">Beosztás</div>
+          <div style="width:80px; flex-shrink:0; text-align:center;">Aliasok</div>
+          <div style="width:160px; flex-shrink:0;">Alias példák</div>
+          <div style="width:80px; flex-shrink:0;"></div>
+        </div>
+        <!-- Sorok helye -->
+        <div id="tableBody"></div>
+      </div>
+
+      <!-- Form panel (alapból rejtett) -->
+      <div class="form-panel" id="formPanel" style="display:none;">
+        <div class="form-panel-header">
+          <span class="form-panel-title" id="formTitle">Új sofőr</span>
+          <button class="action-btn" id="btnPanelClose" title="Bezárás">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="form-panel-body">
+          <div class="form-field">
+            <label class="form-label" for="inputNev">Teljes név <span style="color:var(--color-error)">*</span></label>
+            <input class="form-input" type="text" id="inputNev" placeholder="pl. Nagy Gábor" />
+            <span class="form-error" id="errorNev">A teljes név megadása kötelező.</span>
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="inputStatusz">Státusz</label>
+            <select class="form-select" id="inputStatusz">
+              <option value="aktiv">Aktív</option>
+              <option value="inaktiv">Inaktív</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="inputBeosztas">Beosztás</label>
+            <select class="form-select" id="inputBeosztas">
+              <option value="sofor">Sofőr</option>
+              <option value="gepkezelo">Gépkezelő</option>
+              <option value="sofor_es_gepkezelo">Sofőr és gépkezelő</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Aliasok / becénevek</label>
+            <div id="aliasList" class="alias-list"></div>
+            <input
+              class="alias-new-input"
+              type="text"
+              id="newAliasInput"
+              placeholder="Új alias (Enter a hozzáadáshoz)"
+            />
+          </div>
+        </div>
+        <!-- Kompetencia szekció — csak szerkesztés módban látható -->
+        <div id="kompetenciaSection" style="display:none; border-top:1px solid var(--color-border); padding-top:12px; margin-top:4px;">
+          <div class="form-field">
+            <label class="form-label">Kompetenciák (gépek)</label>
+            <div id="kompetenciaList" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; min-height:24px;"></div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <select class="form-select" id="kompetenciaGepSelect" style="flex:1;">
+                <option value="">— Gép kiválasztása —</option>
+              </select>
+              <button class="btn-primary" id="btnAddKompetencia" style="white-space:nowrap;">Hozzáadás</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-panel-footer">
+          <button class="btn-secondary" id="btnCancel">Mégse</button>
+          <button class="btn-primary" id="btnSave">Mentés</button>
+        </div>
+      </div>
+
+    </div><!-- /.content-area -->
+
+  </div><!-- /.main-content -->
+</div><!-- /.app-layout -->
+
+<script type="module">
+  import {
+    requireAuth, logout, isAdmin, getUser, saveToIndexedDB,
+    getAllSoforok, createSofor, updateSofor, deleteSofor,
+    getAllGepek,
+    addKompetencia, removeKompetencia, getKompetenciaBySofor,
+  } from './api.js';
+
+  requireAuth();
+
+  // ─── Állapot ────────────────────────────────────────────────────────────────
+
+  let currentFilter  = 'all';   // 'all' | 'aktiv' | 'inaktiv'
+  let editingId      = null;    // null = új sofőr, number = szerkesztés
+  let allSoforok     = [];
+  let allGepek       = [];
+  let filterText     = '';
+  let currentAliases = [];      // szerkesztés alatt lévő alias tömb
+
+  // ─── Inicializálás ──────────────────────────────────────────────────────────
+
+  // Sidebar felhasználónév feltöltése
+  document.getElementById('sidebarUserName').textContent = getUser()?.nev || getUser()?.felhasznalonev || '—';
+  if (isAdmin()) document.getElementById('navAdminItem').style.display = '';
+  document.getElementById('btnLogout').addEventListener('click', () => logout());
+
+  try {
+    allGepek = await getAllGepek();
+    populateGepSelect();
+    await loadAndRender();
+    // Szerkesztési gombok elrejtése nem-admin felhasználóknak
+    if (!isAdmin()) {
+      document.getElementById('btnNew').style.display = 'none';
+    }
+  } catch (err) {
+    // API hiba megjelenítése
+    document.querySelector('.content-area').innerHTML =
+      '<div class="error-banner">Betöltési hiba — töltsd újra az oldalt</div>';
+    console.error('[soforok] init hiba:', err);
+  }
+
+  // ─── Adatbetöltés és renderelés ─────────────────────────────────────────────
+
+  async function loadAndRender() {
+    allSoforok = await getAllSoforok();
+    updateCounts();
+    renderTable();
+  }
+
+  function populateGepSelect() {
+    const sel = document.getElementById('kompetenciaGepSelect');
+    sel.innerHTML = '<option value="">— Gép kiválasztása —</option>' +
+      allGepek.map(g => {
+        const label = [g.tipus, g.rendszam].filter(Boolean).join(' – ') || `Gép #${g.id}`;
+        return `<option value="${g.id}">${escHtml(label)}</option>`;
+      }).join('');
+  }
+
+  // ─── Beosztás megjelenítő segédfüggvény ─────────────────────────────────────
+
+  function beosztasLabel(beosztas) {
+    if (beosztas === 'gepkezelo')         return 'Gépkezelő';
+    if (beosztas === 'sofor_es_gepkezelo') return 'Sofőr & Gépk.';
+    return 'Sofőr';
+  }
+
+  function beosztasBadgeClass(beosztas) {
+    if (beosztas === 'gepkezelo')         return 'badge badge--inactive';
+    if (beosztas === 'sofor_es_gepkezelo') return 'badge badge--active';
+    return 'badge';
+  }
+
+  function updateCounts() {
+    const total    = allSoforok.length;
+    const aktiv    = allSoforok.filter(s => s.statusz === 'aktiv').length;
+    const inaktiv  = allSoforok.filter(s => s.statusz === 'inaktiv').length;
+
+    document.getElementById('countAll').textContent      = total;
+    document.getElementById('countActive').textContent   = aktiv;
+    document.getElementById('countInactive').textContent = inaktiv;
+    document.getElementById('subtitle').textContent      = `${total} sofőr összesen`;
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+
+    // Szűrés státusz alapján
+    let filtered = allSoforok.filter(s => {
+      if (currentFilter === 'aktiv')   return s.statusz === 'aktiv';
+      if (currentFilter === 'inaktiv') return s.statusz === 'inaktiv';
+      return true;
+    });
+
+    // Keresés névben (case-insensitive)
+    if (filterText) {
+      const q = filterText.toLowerCase();
+      filtered = filtered.filter(s =>
+        (s.teljes_nev || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<div class="table-empty">Nincs megjeleníthető sofőr.</div>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(s => createRowHTML(s)).join('');
+  }
+
+  // ─── Sor HTML generálás ──────────────────────────────────────────────────────
+
+  function createRowHTML(sofor) {
+    const isInaktiv  = sofor.statusz === 'inaktiv';
+    const rowClass   = isInaktiv ? 'table-row table-row--inactive' : 'table-row';
+    const dotClass   = isInaktiv ? 'status-dot status-dot--inactive' : 'status-dot status-dot--active';
+    const badgeClass = isInaktiv ? 'badge badge--inactive' : 'badge badge--active';
+    const badgeText  = isInaktiv ? 'Inaktív' : 'Aktív';
+    const btnDisabled = isInaktiv ? 'action-btn--disabled' : '';
+
+    // Alias adatok
+    let aliases = [];
+    try { aliases = JSON.parse(sofor.aliasok || '[]'); } catch { aliases = []; }
+    const aliasCount    = aliases.length;
+    const aliasExamples = aliases.slice(0, 2).join(', ');
+
+    // Biztonságos HTML szöveg
+    const nev = escHtml(sofor.teljes_nev || '—');
+
+    const bLabel = beosztasLabel(sofor.beosztas);
+    const bBadge = beosztasBadgeClass(sofor.beosztas);
+
+    return `
+      <div class="${rowClass}" data-id="${sofor.id}">
+        <div style="width:32px; flex-shrink:0; display:flex; align-items:center;">
+          <span class="${dotClass}"></span>
+        </div>
+        <div style="flex:2; min-width:0; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          ${nev}
+        </div>
+        <div style="width:100px; flex-shrink:0;">
+          <span class="${badgeClass}">${badgeText}</span>
+        </div>
+        <div style="width:130px; flex-shrink:0;">
+          <span class="${bBadge}" style="font-size:11px;">${bLabel}</span>
+        </div>
+        <div style="width:80px; flex-shrink:0; text-align:center; color:var(--color-text-muted); font-size:13px;">
+          ${aliasCount > 0 ? aliasCount : '—'}
+        </div>
+        <div style="width:160px; flex-shrink:0; color:var(--color-text-secondary); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          ${aliasExamples ? escHtml(aliasExamples) : '—'}
+        </div>
+        <div style="width:80px; flex-shrink:0; display:flex; align-items:center; justify-content:flex-end; gap:4px;">
+          ${isAdmin() ? `
+          <button class="action-btn action-btn--edit ${btnDisabled}" title="Szerkesztés" onclick="handleEdit(${sofor.id})">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9.5 2.5l2 2L4 12H2v-2l7.5-7.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="action-btn action-btn--delete ${btnDisabled}" title="Törlés" onclick="handleDelete(${sofor.id})">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 3.5h10M5 3.5V2h4v1.5M5.5 6v4M8.5 6v4M3 3.5l.7 8h6.6l.7-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  // ─── Form kezelés ────────────────────────────────────────────────────────────
+
+  function openNewForm() {
+    editingId      = null;
+    currentAliases = [];
+    document.getElementById('formTitle').textContent        = 'Új sofőr';
+    document.getElementById('inputNev').value               = '';
+    document.getElementById('inputStatusz').value           = 'aktiv';
+    document.getElementById('inputBeosztas').value          = 'sofor';
+    document.getElementById('kompetenciaSection').style.display = 'none';
+    renderAliasList();
+    document.getElementById('newAliasInput').value          = '';
+    document.getElementById('formPanel').style.display      = 'flex';
+    document.getElementById('inputNev').focus();
+  }
+
+  async function openEditForm(id) {
+    const sofor = allSoforok.find(s => s.id === id);
+    if (!sofor) return;
+
+    editingId = id;
+    try { currentAliases = JSON.parse(sofor.aliasok || '[]'); } catch { currentAliases = []; }
+
+    document.getElementById('formTitle').textContent        = 'Szerkesztés';
+    document.getElementById('inputNev').value               = sofor.teljes_nev || '';
+    document.getElementById('inputStatusz').value           = sofor.statusz || 'aktiv';
+    document.getElementById('inputBeosztas').value          = sofor.beosztas || 'sofor';
+    document.getElementById('kompetenciaSection').style.display = 'block';
+    renderAliasList();
+    await renderKompetenciaList(id);
+    document.getElementById('newAliasInput').value          = '';
+    document.getElementById('formPanel').style.display      = 'flex';
+    document.getElementById('inputNev').focus();
+  }
+
+  function closeForm() {
+    document.getElementById('formPanel').style.display          = 'none';
+    document.getElementById('kompetenciaSection').style.display = 'none';
+    editingId      = null;
+    currentAliases = [];
+  }
+
+  // ─── Kompetencia lista renderelés ───────────────────────────────────────────
+
+  async function renderKompetenciaList(sofor_id) {
+    const listEl = document.getElementById('kompetenciaList');
+    const komp   = await getKompetenciaBySofor(sofor_id);
+    if (komp.length === 0) {
+      listEl.innerHTML = '<span style="color:var(--color-text-muted);font-size:12px;">Nincs kompetencia rögzítve.</span>';
+      return;
+    }
+    listEl.innerHTML = komp.map(k => {
+      const gep   = allGepek.find(g => g.id === k.gep_id);
+      const label = gep ? [gep.tipus, gep.rendszam].filter(Boolean).join(' – ') : `Gép #${k.gep_id}`;
+      return `<span class="alias-item" style="cursor:default;">
+        <span class="alias-text">${escHtml(label)}</span>
+        <button class="alias-delete-btn" onclick="removeKomp(${k.sofor_id}, ${k.gep_id})" title="Törlés">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </span>`;
+    }).join('');
+  }
+
+  // ─── Alias lista renderelés ──────────────────────────────────────────────────
+
+  function renderAliasList() {
+    const listEl = document.getElementById('aliasList');
+    if (currentAliases.length === 0) {
+      listEl.innerHTML = '';
+      return;
+    }
+    listEl.innerHTML = currentAliases.map((alias, idx) => `
+      <div class="alias-item">
+        <span class="alias-text">${escHtml(alias)}</span>
+        <button class="alias-delete-btn" onclick="removeAlias(${idx})" title="Törlés">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 1l8 8M9 1L1 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    `).join('');
+  }
+
+  // ─── Mentés ──────────────────────────────────────────────────────────────────
+
+  async function handleSave() {
+    const nev = document.getElementById('inputNev').value.trim();
+    if (!nev) {
+      const inputNev  = document.getElementById('inputNev');
+      const errorNev  = document.getElementById('errorNev');
+      inputNev.focus();
+      inputNev.style.borderColor = 'var(--color-error)';
+      errorNev.classList.add('visible');
+      return;
+    }
+
+    const statusz   = document.getElementById('inputStatusz').value;
+    const beosztas  = document.getElementById('inputBeosztas').value;
+    const data = {
+      teljes_nev: nev,
+      statusz:    statusz,
+      beosztas:   beosztas,
+      aliasok:    JSON.stringify(currentAliases),
+    };
+
+    try {
+      if (editingId !== null) {
+        await updateSofor(editingId, data);
+      } else {
+        await createSofor(data);
+      }
+      await saveToIndexedDB();
+      closeForm();
+      await loadAndRender();
+    } catch (err) {
+      alert('Hiba a mentés során: ' + err.message);
+    }
+  }
+
+  // ─── Törlés ──────────────────────────────────────────────────────────────────
+
+  async function handleDelete(id) {
+    if (!confirm('Biztosan törli ezt a sofőrt?')) return;
+    try {
+      await deleteSofor(id);
+      await saveToIndexedDB();
+      // Ha éppen ezt szerkesztjük, zárjuk be a formot
+      if (editingId === id) closeForm();
+      await loadAndRender();
+    } catch (err) {
+      alert('Törlési hiba: ' + err.message);
+    }
+  }
+
+  // ─── Globális handlerek (onclick-ből meghívva) ───────────────────────────────
+
+  window.handleEdit   = (id) => openEditForm(id);
+  window.handleDelete = (id) => handleDelete(id);
+  window.removeAlias  = (idx) => {
+    currentAliases.splice(idx, 1);
+    renderAliasList();
+  };
+  window.removeKomp   = async (sofor_id, gep_id) => {
+    try {
+      await removeKompetencia(sofor_id, gep_id);
+      await saveToIndexedDB();
+      await renderKompetenciaList(sofor_id);
+    } catch (err) {
+      alert('Kompetencia törlési hiba: ' + err.message);
+    }
+  };
+
+  // ─── Eseménykezelők ──────────────────────────────────────────────────────────
+
+  document.getElementById('btnNew').onclick      = () => openNewForm();
+  document.getElementById('btnSave').onclick     = () => handleSave();
+  document.getElementById('btnCancel').onclick   = () => closeForm();
+  document.getElementById('btnPanelClose').onclick = () => closeForm();
+
+  // Hibajelzés törlése gépeléskor
+  document.getElementById('inputNev').oninput = () => {
+    document.getElementById('inputNev').style.borderColor = '';
+    document.getElementById('errorNev').classList.remove('visible');
+  };
+
+  // Új alias hozzáadása Enter billentyűre
+  document.getElementById('newAliasInput').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const val = e.target.value.trim();
+    if (!val) return;
+    if (!currentAliases.includes(val)) {
+      currentAliases.push(val);
+      renderAliasList();
+    }
+    e.target.value = '';
+  });
+
+  // Kompetencia hozzáadása
+  document.getElementById('btnAddKompetencia').onclick = async () => {
+    if (editingId === null) return;
+    const sel   = document.getElementById('kompetenciaGepSelect');
+    const gepId = parseInt(sel.value, 10);
+    if (!gepId) return;
+    try {
+      await addKompetencia(editingId, gepId);
+      await saveToIndexedDB();
+      await renderKompetenciaList(editingId);
+      sel.value = '';
+    } catch (err) {
+      alert('Kompetencia hozzáadási hiba: ' + err.message);
+    }
+  };
+
+  // Keresés
+  document.getElementById('searchInput').oninput = (e) => {
+    filterText = e.target.value.trim();
+    renderTable();
+  };
+
+  // Szűrő tabok
+  document.getElementById('filterAll').onclick = () => setFilter('all');
+  document.getElementById('filterActive').onclick = () => setFilter('aktiv');
+  document.getElementById('filterInactive').onclick = () => setFilter('inaktiv');
+
+  function setFilter(f) {
+    currentFilter = f;
+    // Tab stílusok frissítése
+    document.getElementById('filterAll').className    = 'filter-tab' + (f === 'all'    ? ' filter-tab--active' : '');
+    document.getElementById('filterActive').className = 'filter-tab' + (f === 'aktiv'  ? ' filter-tab--active' : '');
+    document.getElementById('filterInactive').className = 'filter-tab' + (f === 'inaktiv' ? ' filter-tab--active' : '');
+    renderTable();
+  }
+
+  // ─── Segédfüggvény: HTML escape ─────────────────────────────────────────────
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>
